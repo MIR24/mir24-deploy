@@ -1,7 +1,7 @@
 <?php
 namespace Deployer;
 
-require 'recipe/common.php';
+require 'recipe/laravel.php';
 
 inventory('hosts.yml');
 
@@ -14,27 +14,36 @@ set('repository', '');
 // [Optional] Allocate tty for git clone. Default value is false.
 set('git_tty', true); 
 
-// Shared files/dirs between deploys 
-set('shared_files', []);
-set('shared_dirs', []);
-
-// Writable dirs by web server 
-set('writable_dirs', []);
+set('bin/npm', function () {
+    return run('which npm');
+});
 
 // Tasks
 
 desc('Deploy frontend-server test bench');
-task('deploy-test-frontend', [
+task('deploy', [
     'deploy:info',
     'deploy:prepare',
     'deploy:lock',
     'db:init',
-])->onHosts('test-frontend');
-
-desc('Deploy backend-server test bench');
-task('deploy-test-backend', [
-    'deploy:info',
-])->onHosts('test-backend');
+    'deploy:release',
+    'deploy:update_code',
+    'db:clone',
+    'deploy:shared',
+    'config:clone',
+    'deploy:vendors',
+	'npm:install',
+	'build',
+	'deploy:writable',
+	'artisan:storage:link',
+	'artisan:cache:clear',
+	'artisan:config:cache',
+	'artisan:optimize',
+	'artisan:migrate',
+	'deploy:symlink',
+	'deploy:unlock',
+	'cleanup',
+]);
 
 //Executing initial SQL dump
 desc('Executing initial dump may took a minute');
@@ -57,4 +66,46 @@ task('db:init', function () {
         invoke('deploy:unlock');
         die;
     }
+})->onHosts('test-frontend');
+
+//TODO configure database as subrepo
+desc('Cloning database repository');
+task('db:clone', function () {
+    run('cd {{release_path}} && git clone git@github.com:MIR24/database.git');
+})->onHosts('test-frontend');
+
+//TODO maybe better path procedure for shared dir
+desc('Propagate configuration file');
+task('config:clone', function () {
+    if(test('[ -s {{deploy_path}}/shared/.env ]'))
+    {
+        writeln('<comment>Config file already shared, check and edit shared_folder/.env</comment>');
+    } else {
+        run('cp {{env_example_file}} {{deploy_path}}/shared/.env');
+    }
 });
+
+// Did not include npm recipe because of low timeout and poor messaging
+desc('Install npm packages');
+task('npm:install', function () {
+    if (has('previous_release')) {
+        if (test('[ -d {{previous_release}}/node_modules ]')) {
+            run('cp -R {{previous_release}}/node_modules {{release_path}}');
+        } else
+			writeln('<info>Packages installation may take a while for the first time..</info>');
+    }
+    run("cd {{release_path}} && {{bin/npm}} install", ["timeout" => 1800]);
+})->onHosts('test-frontend');
+
+desc('Build assets');
+task('build', function () {
+    run('cd {{release_path}} && gulp');
+})->onHosts('test-frontend');
+
+desc('Generate application key');
+task('artisan:key:generate', function () {
+	$output = run('if [ -f {{deploy_path}}/current/artisan ]; then {{bin/php}} {{deploy_path}}/current/artisan key:generate; fi');
+	writeln('<info>' . $output . '</info>');
+});
+
+task('artisan:migrate')->onHosts('test-frontend');
