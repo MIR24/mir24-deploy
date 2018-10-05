@@ -11,16 +11,13 @@ set('application', 'my_project');
 // Project repository
 set('repository', '');
 
-// [Optional] Allocate tty for git clone. Default value is false.
-set('git_tty', true); 
-
 set('bin/npm', function () {
     return run('which npm');
 });
 
 // Tasks
 
-desc('Deploy frontend-server test bench');
+desc('Deploy complete process');
 task('deploy', [
     'deploy:info',
     'deploy:prepare',
@@ -57,15 +54,8 @@ task('db:init', function () {
         invoke('deploy:unlock');
         die;
     }
-
-    if(askConfirmation("Going to overwrite existing database, confirm..", false)) {
-        run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} mir24_7 < {{dump_file}}');
-    } else {
-        writeln('<comment>Stop deployment</comment>');
-
-        invoke('deploy:unlock');
-        die;
-    }
+	writeln('<info>SQL dump execution, please wait..</info>');
+	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} mir24_7 < {{dump_file}}');
 })->onHosts('test-frontend');
 
 //TODO configure database as subrepo
