@@ -30,7 +30,8 @@ task('deploy', [
     'config:clone',
     'deploy:vendors',
     'npm:install',
-    'build',
+    'npm:build',
+    'gulp',
     'deploy:writable',
     'artisan:storage:link',
     'artisan:cache:clear',
@@ -73,7 +74,7 @@ task('config:clone', function () {
     } else {
         run('cp {{env_example_file}} {{deploy_path}}/shared/.env');
     }
-});
+})->onHosts('test-frontend', 'test-backend');
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -85,10 +86,15 @@ task('npm:install', function () {
 			writeln('<info>Packages installation may take a while for the first time..</info>');
     }
     run("cd {{release_path}} && {{bin/npm}} install", ["timeout" => 1800]);
-})->onHosts('test-frontend');
+})->onHosts('test-frontend','test-backend-client');
+
+desc('Build npm packages');
+task('npm:build', function () {
+    run("cd {{release_path}} && {{bin/npm}} run build", ["timeout" => 1800]);
+})->onHosts('test-backend-client');
 
 desc('Build assets');
-task('build', function () {
+task('gulp', function () {
     run('cd {{release_path}} && gulp');
 })->onHosts('test-frontend');
 
@@ -98,4 +104,12 @@ task('artisan:key:generate', function () {
 	writeln('<info>' . $output . '</info>');
 });
 
+//Filter external recipes
 task('artisan:migrate')->onHosts('test-frontend');
+task('artisan:storage:link')->onHosts('test-frontend', 'test-backend');
+task('artisan:cache:clear')->onHosts('test-frontend', 'test-backend');
+task('artisan:config:cache')->onHosts('test-frontend', 'test-backend');
+task('artisan:optimize')->onHosts('test-frontend', 'test-backend');
+task('deploy:vendors')->onHosts('test-frontend', 'test-backend');
+task('deploy:shared')->onHosts('test-frontend', 'test-backend');
+task('deploy:writable')->onHosts('test-frontend', 'test-backend');
