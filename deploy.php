@@ -29,6 +29,7 @@ task('deploy', [
     'deploy:shared',
     'config:clone',
     'deploy:vendors',
+    'tsd:install',
     'npm:install',
     'npm:build',
     'gulp',
@@ -86,12 +87,18 @@ task('npm:install', function () {
 			writeln('<info>Packages installation may take a while for the first time..</info>');
     }
     run("cd {{release_path}} && {{bin/npm}} install", ["timeout" => 1800]);
-})->onHosts('test-frontend','test-backend-client');
+})->onHosts('test-frontend','test-backend-client','test-photobank-client');
+
+//TODO Try to copy tsd indtallation from previous release
+desc('Install tsd packages');
+task('tsd:install', function () {
+    run("cd {{release_path}} && tsd install", ["timeout" => 1800]);
+})->onHosts('test-photobank-client');
 
 desc('Build npm packages');
 task('npm:build', function () {
     run("cd {{release_path}} && {{bin/npm}} run build", ["timeout" => 1800]);
-})->onHosts('test-backend-client');
+})->onHosts('test-backend-client','test-photobank-client');
 
 desc('Build assets');
 task('gulp', function () {
