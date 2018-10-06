@@ -5,6 +5,8 @@ require 'recipe/laravel.php';
 
 inventory('hosts.yml');
 
+set('default_timeout', 1800);
+
 // Project name
 set('application', 'my_project');
 
