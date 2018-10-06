@@ -6,6 +6,8 @@ require 'recipe/laravel.php';
 inventory('hosts.yml');
 
 set('default_timeout', 1800);
+set('copy_dirs', ['vendor']);
+set('composer_action','update');
 
 // Project name
 set('application', 'my_project');
@@ -30,6 +32,7 @@ task('deploy', [
     'db:clone',
     'deploy:shared',
     'config:clone',
+    'deploy:copy_dirs',
     'deploy:vendors',
     'tsd:install',
     'npm:install',
@@ -52,11 +55,9 @@ task('db:init', function () {
     writeln('<info>Check if {{dump_file}} exists</info>');
 
     if(test('[ ! -r {{dump_file}} ]')) {
-        writeln('<error>DB dump file not found, upload file, than configure hosts</error>');
-        writeln('<comment>Stop deployment</comment>');
+        writeln('<comment>No dump file found, proceed</comment>');
 
-        invoke('deploy:unlock');
-        die;
+        return;
     }
 	writeln('<info>SQL dump execution, please wait..</info>');
 	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} mir24_7 < {{dump_file}}');
@@ -122,3 +123,4 @@ task('artisan:optimize')->onHosts('test-frontend', 'test-backend');
 task('deploy:vendors')->onHosts('test-frontend', 'test-backend');
 task('deploy:shared')->onHosts('test-frontend', 'test-backend');
 task('deploy:writable')->onHosts('test-frontend', 'test-backend');
+task('deploy:copy_dirs')->onHosts('test-frontend', 'test-backend');
