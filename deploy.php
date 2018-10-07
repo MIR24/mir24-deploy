@@ -50,7 +50,7 @@ task('deploy', [
     'deploy:symlink',
     'deploy:unlock',
     'cleanup',
-]);
+])->onStage('test');
 
 //Executing initial SQL dump
 desc('Executing initial dump may took a minute');
@@ -64,13 +64,13 @@ task('db:init', function () {
     }
 	writeln('<info>SQL dump execution, please wait..</info>');
 	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} mir24_7 < {{dump_file}}');
-})->onHosts('test-frontend');
+})->onHosts('dev7-frontend');
 
 //TODO configure database as subrepo
 desc('Cloning database repository');
 task('db:clone', function () {
     run('cd {{release_path}} && git clone git@github.com:MIR24/database.git');
-})->onHosts('test-frontend');
+})->onHosts('dev7-frontend');
 
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
@@ -81,7 +81,7 @@ task('config:clone', function () {
     } else {
         run('cp {{env_example_file}} {{deploy_path}}/shared/.env');
     }
-})->onHosts('test-frontend', 'test-backend');
+})->onHosts('dev7-frontend', 'dev7-backend');
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -93,23 +93,23 @@ task('npm:install', function () {
 			writeln('<info>Packages installation may take a while for the first time..</info>');
     }
     run("cd {{release_path}} && {{bin/npm}} install", ["timeout" => 1800]);
-})->onHosts('test-frontend','test-backend-client','test-photobank-client');
+})->onHosts('dev7-frontend','dev7-backend-client','dev7-photobank-client');
 
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
 task('tsd:install', function () {
     run("cd {{release_path}} && tsd install", ["timeout" => 1800]);
-})->onHosts('test-photobank-client');
+})->onHosts('dev7-photobank-client');
 
 desc('Build npm packages');
 task('npm:build', function () {
     run("cd {{release_path}} && {{bin/npm}} run build", ["timeout" => 1800]);
-})->onHosts('test-backend-client','test-photobank-client');
+})->onHosts('dev7-backend-client','dev7-photobank-client');
 
 desc('Build assets');
 task('gulp', function () {
     run('cd {{release_path}} && gulp');
-})->onHosts('test-frontend');
+})->onHosts('dev7-frontend');
 
 desc('Generate application key');
 task('artisan:key:generate', function () {
@@ -118,13 +118,13 @@ task('artisan:key:generate', function () {
 });
 
 //Filter external recipes
-task('artisan:migrate')->onHosts('test-frontend');
-task('artisan:storage:link')->onHosts('test-frontend', 'test-backend');
-task('artisan:cache:clear')->onHosts('test-frontend', 'test-backend');
-task('artisan:config:cache')->onHosts('test-frontend', 'test-backend');
-task('artisan:optimize')->onHosts('test-frontend', 'test-backend');
-task('deploy:vendors')->onHosts('test-frontend', 'test-backend');
-task('deploy:shared')->onHosts('test-frontend', 'test-backend');
-task('deploy:writable')->onHosts('test-frontend', 'test-backend');
-task('deploy:copy_dirs')->onHosts('test-frontend', 'test-backend');
-task('rsync')->onHosts('test-photobank-client', 'test-backend-client');
+task('artisan:migrate')->onHosts('dev7-frontend');
+task('artisan:storage:link')->onHosts('dev7-frontend', 'dev7-backend');
+task('artisan:cache:clear')->onHosts('dev7-frontend', 'dev7-backend');
+task('artisan:config:cache')->onHosts('dev7-frontend', 'dev7-backend');
+task('artisan:optimize')->onHosts('dev7-frontend', 'dev7-backend');
+task('deploy:vendors')->onHosts('dev7-frontend', 'dev7-backend');
+task('deploy:shared')->onHosts('dev7-frontend', 'dev7-backend');
+task('deploy:writable')->onHosts('dev7-frontend', 'dev7-backend');
+task('deploy:copy_dirs')->onHosts('dev7-frontend', 'dev7-backend');
+task('rsync')->onHosts('dev7-photobank-client', 'dev7-backend-client');
