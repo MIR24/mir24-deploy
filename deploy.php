@@ -1,7 +1,9 @@
 <?php
 namespace Deployer;
 
+require __DIR__ . '/vendor/autoload.php';
 require 'recipe/laravel.php';
+require 'recipe/rsync.php';
 
 inventory('hosts.yml');
 
@@ -38,6 +40,7 @@ task('deploy', [
     'npm:install',
     'npm:build',
     'gulp',
+    'rsync',
     'deploy:writable',
     'artisan:storage:link',
     'artisan:cache:clear',
@@ -124,3 +127,4 @@ task('deploy:vendors')->onHosts('test-frontend', 'test-backend');
 task('deploy:shared')->onHosts('test-frontend', 'test-backend');
 task('deploy:writable')->onHosts('test-frontend', 'test-backend');
 task('deploy:copy_dirs')->onHosts('test-frontend', 'test-backend');
+task('rsync')->onHosts('test-photobank-client', 'test-backend-client');
