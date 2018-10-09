@@ -7,6 +7,14 @@ require 'recipe/rsync.php';
 
 inventory('hosts.yml');
 
+//Override laravel recipe due to 'Not a git repo' error
+set('laravel_version', function () {
+    $result = run('cd {{release_path}} && {{bin/php}} artisan --version');
+    preg_match_all('/(\d+\.?)+/', $result, $matches);
+    $version = $matches[0][0] ?? 5.5;
+    return $version;
+});
+
 set('default_timeout', 1800);
 set('copy_dirs', ['vendor']);
 
@@ -70,7 +78,10 @@ task('db:init', function () {
 desc('Cloning database repository');
 task('db:clone', function () {
     run('cd {{release_path}} && git clone git@github.com:MIR24/database.git');
-})->onHosts('test-frontend','test-backend');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend');
 
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
@@ -81,7 +92,10 @@ task('config:clone', function () {
     } else {
         run('cp {{env_example_file}} {{deploy_path}}/shared/.env');
     }
-})->onHosts('test-frontend', 'test-backend');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend');
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -93,7 +107,11 @@ task('npm:install', function () {
 			writeln('<info>Packages installation may take a while for the first time..</info>');
     }
     run("cd {{release_path}} && {{bin/npm}} install", ["timeout" => 1800]);
-})->onHosts('test-frontend','test-backend-client','test-photobank-client');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend-client',
+    'test-photobank-client');
 
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
@@ -104,33 +122,42 @@ task('tsd:install', function () {
 desc('Build npm packages');
 task('npm:build', function () {
     run("cd {{release_path}} && {{bin/npm}} run build", ["timeout" => 1800]);
-})->onHosts('test-backend-client','test-photobank-client');
+})->onHosts(
+    'test-backend-client',
+    'test-photobank-client');
 
 desc('Build assets');
 task('gulp', function () {
     run('cd {{release_path}} && gulp');
-})->onHosts('test-frontend');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend');
 
 desc('Generate application key');
 task('artisan:key:generate', function () {
 	$output = run('if [ -f {{deploy_path}}/current/artisan ]; then {{bin/php}} {{deploy_path}}/current/artisan key:generate; fi');
 	writeln('<info>' . $output . '</info>');
-});
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend');
 
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
     // Will use simple≤ two steps switch.
     run("cd {{release_path}} && {{bin/symlink}} {{uploaded_path}} public/uploaded"); // Atomic override symlink.
-})->onHosts('test-frontend');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend');
 
 //Filter external recipes
-task('artisan:migrate')->onHosts('test-frontend');
-task('artisan:storage:link')->onHosts('test-frontend', 'test-backend');
-task('artisan:cache:clear')->onHosts('test-frontend', 'test-backend');
-task('artisan:config:cache')->onHosts('test-frontend');
-task('artisan:optimize')->onHosts('test-frontend');
-task('deploy:vendors')->onHosts('test-frontend', 'test-backend');
-task('deploy:shared')->onHosts('test-frontend', 'test-backend');
-task('deploy:writable')->onHosts('test-frontend', 'test-backend');
-task('deploy:copy_dirs')->onHosts('test-frontend', 'test-backend');
-task('rsync')->onHosts('test-photobank-client', 'test-backend-client');
+task('artisan:migrate')->onHosts('test-frontend','prod-frontend');
+task('artisan:storage:link')->onHosts('test-frontend','prod-frontend','test-backend');
+task('artisan:cache:clear')->onHosts('test-frontend','prod-frontend','test-backend');
+task('artisan:config:cache')->onHosts('test-frontend','prod-frontend');
+task('artisan:optimize')->onHosts('test-frontend','prod-frontend');
+task('deploy:vendors')->onHosts('test-frontend','prod-frontend','test-backend');
+task('deploy:shared')->onHosts('test-frontend','prod-frontend','test-backend');
+task('deploy:writable')->onHosts('test-frontend','prod-frontend','test-backend');
+task('deploy:copy_dirs')->onHosts('test-frontend','prod-frontend','test-backend');
+task('rsync')->onHosts('test-photobank-client','test-backend-client');
