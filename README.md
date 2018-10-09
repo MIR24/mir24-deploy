@@ -29,7 +29,7 @@ Command executing SQL runs at `frontend` host, so specify dump filename at `host
 test-frontend:
     dump_file: mir24_7.sql
 ```
-If deploy procedure fails to locate dump file it just proceed with comment message.
+If deploy procedure fails to locate dump file it just proceeds with comment message.
 
 Configure path to .env file `env_example_file`.<br>
 Edit `.env` file if needed (e.g. to configure DB connection for application).<br>
