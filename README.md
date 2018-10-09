@@ -58,23 +58,23 @@ Default branch deployed is `master` except `photobank-client` component.<br>
 
 Use `test` for stage, `--branch` option to deploy branch, and `--hosts` for particular component.
 
-For example if you're going to build application for test run after `frontend-server` has been patched at `MIRSCR-42-view-fix` branch, you should execute: 
+For example if you're going to build application for test run after `frontend-server` has been patched at `MIRSCR-42-view-fix` branch, you should execute first:
 ```
 $ dep deploy test --hosts=backend-server,backend-client,photobank-client
 ```
-First command builds three components at default branch.
-Then run to build `frontend-server` at `MIRSCR-42-view-fix` branch.
+This command builds three listed at `--hosts` option components at their default branches.
+Then run to build `frontend-server` component at `MIRSCR-42-view-fix` branch:
 ```
 $ dep deploy test --branch=MIRSCR-42-view-fix --hosts=frontend-server
 ```
-Done.
+Now it's done.
 
-Or
+Or:
 ```
 $ dep deploy test
 $ dep deploy test --branch=MIRSCR-42-view-fix --hosts=frontend-server
 ```
-This one takes more time, because frontend-server deployed twice, at default branch within first command than being rebuilt at fix branch.
+This one takes more time, because frontend-server being deployed twice, - at the default branch within first command than being rebuilt at fix branch.
 
 ## Tips
 You have to execute `$ dep rsync test` after deploy if `backend-server` was built solo. In this case `rsync` commands infects `backend-server` with `backend-client` and `photobank-client` components.
