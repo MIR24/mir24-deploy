@@ -9,7 +9,6 @@ inventory('hosts.yml');
 
 set('default_timeout', 1800);
 set('copy_dirs', ['vendor']);
-set('composer_action','update');
 
 // Project name
 set('application', 'my_project');
@@ -47,10 +46,11 @@ task('deploy', [
     'artisan:config:cache',
     'artisan:optimize',
     'artisan:migrate',
+    'symlink:uploaded',
     'deploy:symlink',
     'deploy:unlock',
     'cleanup',
-]);
+])->onStage('test');
 
 //Executing initial SQL dump
 desc('Executing initial dump may took a minute');
@@ -70,7 +70,7 @@ task('db:init', function () {
 desc('Cloning database repository');
 task('db:clone', function () {
     run('cd {{release_path}} && git clone git@github.com:MIR24/database.git');
-})->onHosts('test-frontend');
+})->onHosts('test-frontend','test-backend');
 
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
@@ -117,12 +117,18 @@ task('artisan:key:generate', function () {
 	writeln('<info>' . $output . '</info>');
 });
 
+desc('Creating symlink to uploaded folder at backend server');
+task('symlink:uploaded', function () {
+    // Will use simple≤ two steps switch.
+    run("cd {{release_path}} && {{bin/symlink}} {{uploaded_path}} public/uploaded"); // Atomic override symlink.
+})->onHosts('test-frontend');
+
 //Filter external recipes
 task('artisan:migrate')->onHosts('test-frontend');
 task('artisan:storage:link')->onHosts('test-frontend', 'test-backend');
 task('artisan:cache:clear')->onHosts('test-frontend', 'test-backend');
-task('artisan:config:cache')->onHosts('test-frontend', 'test-backend');
-task('artisan:optimize')->onHosts('test-frontend', 'test-backend');
+task('artisan:config:cache')->onHosts('test-frontend');
+task('artisan:optimize')->onHosts('test-frontend');
 task('deploy:vendors')->onHosts('test-frontend', 'test-backend');
 task('deploy:shared')->onHosts('test-frontend', 'test-backend');
 task('deploy:writable')->onHosts('test-frontend', 'test-backend');
