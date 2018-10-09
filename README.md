@@ -34,9 +34,6 @@ Configure path to .env file `env_example_file`.<br>
 Edit `.env` file if needed (e.g. to configure DB connection for application).<br>
 It will be propageted to the shared folder within `config:clone` task.
 
-Initial project structure should look like this:<br>
-![Deploy procedure](https://raw.githubusercontent.com/MIR24/mir24-deploy/master/images/deploy_structure.png "Deploy procedure")
-
 Now run:
 ```
 $ cd /home/www/dev7.mir24.tv
@@ -46,6 +43,9 @@ $ dep deploy test
 Complete deploy procedure should start.
 After it finished released version located in `current` folder. 
 E.g. `/home/www/dev7.mir24.tv/frontend-server/current`.
+
+Built project structure should look like this:<br>
+![Deploy procedure](https://raw.githubusercontent.com/MIR24/mir24-deploy/master/images/deploy_structure.png "Deploy procedure")
 
 Configure web-server document roots at `/home/www/dev7.mir24.tv/frontend-server/current/public` and `/home/www/dev7.mir24.tv/backend-server/current/public`.
 
