@@ -15,6 +15,8 @@ Clone deploy project:
 ```
 $ git clone git@github.com:MIR24/mir24-deploy.git /home/www/dev7.mir24.tv/mir24-deploy
 ```
+Install dependencies with `$ composer install`;
+
 Configure `deploy_path` and DB connection at `hosts.yml`.<br>
 
 Download initial dump file (you can get example dump file [here](https://drive.google.com/open?id=1L2vvkscPZYIWjAU8QA_TtN3wbay4Yi3A)).<br>
