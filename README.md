@@ -35,7 +35,7 @@ Edit `.env` file if needed (e.g. to configure DB connection for application).<br
 It will be propageted to the shared folder within `config:clone` task.
 
 Initial project structure should look like this:<br>
-![Deploy procedure](https://raw.githubusercontent.com/MIR24/frontend-server-deploy/master/images/deploy_structure.png "Deploy procedure")
+![Deploy procedure](https://raw.githubusercontent.com/MIR24/mir24-deploy/master/images/deploy_structure.png "Deploy procedure")
 
 Now run:
 ```
