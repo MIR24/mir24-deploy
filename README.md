@@ -77,8 +77,7 @@ $ dep deploy test --branch=MIRSCR-42-view-fix --hosts=frontend-server
 This one takes more time, because frontend-server deployed twice, at default branch within first command than being rebuilt at fix branch.
 
 ## Tips
-You have to execute `$ dep rsync test` after deploy if `backend-server` was built solo.<br>
-`rsync` commands infects `backend-server` with `backend-client` and `photobank-components`.
+You have to execute `$ dep rsync test` after deploy if `backend-server` was built solo. In this case `rsync` commands infects `backend-server` with `backend-client` and `photobank-client` components.
 ________
 Use `dep` verbose option to examine deploy procedure, e.g. `-v` shows timing for each task execution.
 Three verbose levels available:
