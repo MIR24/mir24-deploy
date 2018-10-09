@@ -53,8 +53,8 @@ Configure web-server document roots at `/home/www/dev7.mir24.tv/frontend-server/
 
 `$ dep deploy test` builds whole application.
 
-Default branch deployed is `master` except photobank-client.<br>
-Photobank-client being deployed at `external-client-dev` branch by default.
+Default branch deployed is `master` except `photobank-client` component.<br>
+`photobank-client` component being deployed at `external-client-dev` branch by default.
 
 Use `test` for stage, `--branch` option to deploy branch, and `--hosts` for particular component.
 
