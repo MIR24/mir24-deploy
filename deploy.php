@@ -57,9 +57,11 @@ task('deploy', [
     'artisan:optimize',
     'artisan:migrate',
     'symlink:uploaded',
+    'deploy:clear_paths',
     'deploy:symlink',
     'deploy:unlock',
     'cleanup',
+    'success',
 ]);
 
 //Executing initial SQL dump
@@ -194,6 +196,9 @@ task('deploy:copy_dirs')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
+    'prod-backend');
+task('deploy:clear_paths')->onHosts(
+    'prod-frontend',
     'prod-backend');
 task('rsync')->onHosts(
     'test-photobank-client',
