@@ -7,6 +7,8 @@ require 'recipe/rsync.php';
 
 inventory('hosts.yml');
 
+set('ssh_multiplexing', true);
+
 //Override laravel recipe due to 'Not a git repo' error
 set('laravel_version', function () {
     $result = run('cd {{release_path}} && {{bin/php}} artisan --version');
@@ -58,7 +60,7 @@ task('deploy', [
     'deploy:symlink',
     'deploy:unlock',
     'cleanup',
-])->onStage('test');
+]);
 
 //Executing initial SQL dump
 desc('Executing initial dump may took a minute');
@@ -72,7 +74,7 @@ task('db:init', function () {
     }
 	writeln('<info>SQL dump execution, please wait..</info>');
 	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} mir24_7 < {{dump_file}}');
-})->onHosts('test-frontend');
+})->onHosts('test-frontend')->onStage('test');
 
 //TODO configure database as subrepo
 desc('Cloning database repository');
@@ -81,7 +83,8 @@ task('db:clone', function () {
 })->onHosts(
     'test-frontend',
     'prod-frontend',
-    'test-backend');
+    'test-backend',
+    'prod-backend');
 
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
@@ -95,7 +98,8 @@ task('config:clone', function () {
 })->onHosts(
     'test-frontend',
     'prod-frontend',
-    'test-backend');
+    'test-backend',
+    'prod-backend');
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -140,7 +144,8 @@ task('artisan:key:generate', function () {
 })->onHosts(
     'test-frontend',
     'prod-frontend',
-    'test-backend');
+    'test-backend',
+    'prod-backend');
 
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
@@ -151,13 +156,45 @@ task('symlink:uploaded', function () {
     'prod-frontend');
 
 //Filter external recipes
-task('artisan:migrate')->onHosts('test-frontend','prod-frontend');
-task('artisan:storage:link')->onHosts('test-frontend','prod-frontend','test-backend');
-task('artisan:cache:clear')->onHosts('test-frontend','prod-frontend','test-backend');
-task('artisan:config:cache')->onHosts('test-frontend','prod-frontend');
-task('artisan:optimize')->onHosts('test-frontend','prod-frontend');
-task('deploy:vendors')->onHosts('test-frontend','prod-frontend','test-backend');
-task('deploy:shared')->onHosts('test-frontend','prod-frontend','test-backend');
-task('deploy:writable')->onHosts('test-frontend','prod-frontend','test-backend');
-task('deploy:copy_dirs')->onHosts('test-frontend','prod-frontend','test-backend');
-task('rsync')->onHosts('test-photobank-client','test-backend-client');
+task('artisan:migrate')->onHosts(
+    'test-frontend',
+    'prod-frontend');
+task('artisan:storage:link')->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend');
+task('artisan:cache:clear')->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend');
+task('artisan:config:cache')->onHosts(
+    'test-frontend',
+    'prod-frontend');
+task('artisan:optimize')->onHosts(
+    'test-frontend',
+    'prod-frontend');
+task('deploy:vendors')->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend');
+task('deploy:shared')->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend');
+task('deploy:writable')->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend');
+task('deploy:copy_dirs')->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend');
+task('rsync')->onHosts(
+    'test-photobank-client',
+    'test-backend-client');
