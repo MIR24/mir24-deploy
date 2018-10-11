@@ -7,6 +7,10 @@ require 'recipe/rsync.php';
 
 inventory('hosts.yml');
 
+set('release_name', function () {
+    return date('d_M_H_i');
+});
+
 set('ssh_multiplexing', true);
 
 //Override laravel recipe due to 'Not a git repo' error
