@@ -95,6 +95,9 @@ ________
 ________
 
 Run `dep artisan:key:generate test` if `APP_KEY` in `shared/.env` still empty even after deploy complete.
+________
+
+Run `dep config:current` to get current releases list.
 
 ## TODO
 Deployer default procedure clones repo each time into the new `release/*` folder. 
