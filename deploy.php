@@ -5,10 +5,11 @@ require __DIR__ . '/vendor/autoload.php';
 require 'recipe/laravel.php';
 require 'recipe/rsync.php';
 
+$releaseDate = date('d_M_H_i');
 inventory('hosts.yml');
 
-set('release_name', function () {
-    return date('d_M_H_i');
+set('release_name', function () use ($releaseDate) {
+    return $releaseDate;
 });
 
 set('ssh_multiplexing', true);
@@ -41,10 +42,10 @@ task('deploy', [
     'deploy:info',
     'deploy:prepare',
     'deploy:lock',
+    'deploy:release',
     'db:create',
     'db:pipe',
     'db:init',
-    'deploy:release',
     'deploy:update_code',
     'db:clone',
     'deploy:shared',
