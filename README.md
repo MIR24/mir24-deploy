@@ -100,7 +100,7 @@ ________
 Run `dep config:current` to get current releases list.
 ________
 
-Use `dep config:current` to get current release name. ``
+Use `dep config:current` to get current release name.
 
 ## TODO
 Deployer default procedure clones repo each time into the new `release/*` folder. 
