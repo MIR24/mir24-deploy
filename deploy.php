@@ -161,6 +161,26 @@ task('symlink:uploaded', function () {
     'test-frontend',
     'prod-frontend');
 
+desc('Create new database to proceed release');
+task('db:create', function (){
+    writeln('<info>Trying to create database mir24_dep_{{release_name}}</info>');
+	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE mir24_dep_{{release_name}}"');
+})->onHosts('prod-frontend');
+
+desc('Inflate database with data from current released version');
+task('db:pipe', function (){
+    $prevReleaseName = array_pop(get('releases_list'));
+    if($prevReleaseName){
+        writeln('<info>Trying to inflate database mir24_dep_{{release_name}} with release data from '.$prevReleaseName.'</info>');
+        run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
+            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} mir24_dep_{{release_name}}');
+    } else {
+        writeln('<error>No previous release found, can`t inflate database, stop.</error>');
+        die;
+    }
+//	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE mir24_dep_{{release_name}}"');
+})->onHosts('prod-frontend');
+
 //Filter external recipes
 task('artisan:migrate')->onHosts(
     'test-frontend',
