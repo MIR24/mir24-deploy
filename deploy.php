@@ -41,6 +41,8 @@ task('deploy', [
     'deploy:info',
     'deploy:prepare',
     'deploy:lock',
+    'db:create',
+    'db:pipe',
     'db:init',
     'deploy:release',
     'deploy:update_code',
@@ -169,9 +171,10 @@ task('db:create', function (){
 
 desc('Inflate database with data from current released version');
 task('db:pipe', function (){
-    $prevReleaseName = array_pop(get('releases_list'));
+    $releaseList = get('releases_list');
+    $prevReleaseName = array_shift($releaseList);
     if($prevReleaseName){
-        writeln('<info>Trying to inflate database mir24_dep_{{release_name}} with release data from '.$prevReleaseName.'</info>');
+        writeln('<info>Trying to inflate database mir24_dep_{{release_name}} with release data from mir24_dep_'.$prevReleaseName.'</info>');
         run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
             ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} mir24_dep_{{release_name}}');
     } else {
