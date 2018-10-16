@@ -100,15 +100,25 @@ task('db:clone', function () {
     'test-backend',
     'prod-backend');
 
-//TODO maybe better path procedure for shared dir
-desc('Propagate configuration file');
-task('config:clone', function () {
-        run('cp {{env_example_file}} {{release_path}}/.env');
-})->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend');
+desc('Create new database to proceed release');
+task('db:create', function (){
+    writeln('<info>Trying to create database '.get('db_name_releasing').'</info>');
+	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE '.get('db_name_releasing').'"');
+})->onHosts('prod-frontend');
+
+desc('Inflate database with data from current released version');
+task('db:pipe', function (){
+    $releaseList = get('releases_list');
+    $prevReleaseName = array_shift($releaseList);
+    if($prevReleaseName){
+        writeln('<info>Trying to inflate database '.get('db_name_releasing').' with release data from mir24_dep_'.$prevReleaseName.'</info>');
+        run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
+            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} '.get('db_name_releasing'));
+    } else {
+        writeln('<error>No previous release found, can`t inflate database, stop.</error>');
+        die;
+    }
+})->onHosts('prod-frontend');
 
 desc('Infect app configuration with DB credentials');
 task('config:configure:DB', function () {
@@ -118,6 +128,16 @@ task('config:configure:DB', function () {
     run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD=".get('dbpass')."/g' ".get('release_path').'/.env');
 })->onHosts(
     'prod-frontend',
+    'prod-backend');
+
+//TODO maybe better path procedure for shared dir
+desc('Propagate configuration file');
+task('config:clone', function () {
+        run('cp {{env_example_file}} {{release_path}}/.env');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
     'prod-backend');
 
 // Did not include npm recipe because of low timeout and poor messaging
@@ -173,26 +193,6 @@ task('symlink:uploaded', function () {
 })->onHosts(
     'test-frontend',
     'prod-frontend');
-
-desc('Create new database to proceed release');
-task('db:create', function (){
-    writeln('<info>Trying to create database '.get('db_name_releasing').'</info>');
-	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE '.get('db_name_releasing').'"');
-})->onHosts('prod-frontend');
-
-desc('Inflate database with data from current released version');
-task('db:pipe', function (){
-    $releaseList = get('releases_list');
-    $prevReleaseName = array_shift($releaseList);
-    if($prevReleaseName){
-        writeln('<info>Trying to inflate database '.get('db_name_releasing').' with release data from mir24_dep_'.$prevReleaseName.'</info>');
-        run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
-            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} '.get('db_name_releasing'));
-    } else {
-        writeln('<error>No previous release found, can`t inflate database, stop.</error>');
-        die;
-    }
-})->onHosts('prod-frontend');
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
