@@ -50,6 +50,7 @@ task('deploy', [
     'db:clone',
     'deploy:shared',
     'config:clone',
+    'config:configure:DB',
     'deploy:copy_dirs',
     'deploy:vendors',
     'tsd:install',
@@ -98,16 +99,22 @@ task('db:clone', function () {
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
 task('config:clone', function () {
-    if(test('[ -s {{deploy_path}}/shared/.env ]'))
-    {
-        writeln('<comment>Config file already shared, check and edit shared_folder/.env</comment>');
-    } else {
-        run('cp {{env_example_file}} {{deploy_path}}/shared/.env');
-    }
+        run('cp {{env_example_file}} {{release_path}}/.env');
 })->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
+    'prod-backend');
+
+//TODO maybe better path procedure for shared dir
+desc('Infect app configuration with DB credentials');
+task('config:configure:DB', function () {
+    run("sed -i -E 's/DB_HOST=.*/DB_HOST=".get('dbhost')."/g' ".get('release_path').'/.env');
+    run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE=".get('dbname_releasing')."/g' ".get('release_path').'/.env');
+    run("sed -i -E 's/DB_USERNAME=.*/DB_USERNAME=".get('dbuser')."/g' ".get('release_path').'/.env');
+    run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD=".get('dbpass')."/g' ".get('release_path').'/.env');
+})->onHosts(
+    'prod-frontend',
     'prod-backend');
 
 // Did not include npm recipe because of low timeout and poor messaging
@@ -166,8 +173,10 @@ task('symlink:uploaded', function () {
 
 desc('Create new database to proceed release');
 task('db:create', function (){
-    writeln('<info>Trying to create database mir24_dep_{{release_name}}</info>');
+    $DBName = 'mir24_dep_'.get('release_name');
+    writeln('<info>Trying to create database '.$DBName.'</info>');
 	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE mir24_dep_{{release_name}}"');
+    set('dbname_releasing',$DBName);
 })->onHosts('prod-frontend');
 
 desc('Inflate database with data from current released version');
