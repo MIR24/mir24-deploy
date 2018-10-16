@@ -103,7 +103,7 @@ task('db:clone', function () {
 desc('Create new database to proceed release');
 task('db:create', function (){
     writeln('<info>Trying to create database '.get('db_name_releasing').'</info>');
-	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE '.get('db_name_releasing').'"');
+    run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE '.get('db_name_releasing').'"');
 })->onHosts('prod-frontend');
 
 desc('Inflate database with data from current released version');
