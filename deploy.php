@@ -192,7 +192,6 @@ task('db:pipe', function (){
         writeln('<error>No previous release found, can`t inflate database, stop.</error>');
         die;
     }
-//	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE mir24_dep_{{release_name}}"');
 })->onHosts('prod-frontend');
 
 //Filter external recipes
