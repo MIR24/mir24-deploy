@@ -5,7 +5,12 @@ require __DIR__ . '/vendor/autoload.php';
 require 'recipe/laravel.php';
 require 'recipe/rsync.php';
 
+$releaseDate = date('d_M_H_i');
 inventory('hosts.yml');
+
+set('release_name', function () use ($releaseDate) {
+    return $releaseDate;
+});
 
 set('ssh_multiplexing', true);
 
@@ -37,8 +42,10 @@ task('deploy', [
     'deploy:info',
     'deploy:prepare',
     'deploy:lock',
-    'db:init',
     'deploy:release',
+    'db:create',
+    'db:pipe',
+    'db:init',
     'deploy:update_code',
     'db:clone',
     'deploy:shared',
@@ -156,6 +163,27 @@ task('symlink:uploaded', function () {
 })->onHosts(
     'test-frontend',
     'prod-frontend');
+
+desc('Create new database to proceed release');
+task('db:create', function (){
+    writeln('<info>Trying to create database mir24_dep_{{release_name}}</info>');
+	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE mir24_dep_{{release_name}}"');
+})->onHosts('prod-frontend');
+
+desc('Inflate database with data from current released version');
+task('db:pipe', function (){
+    $releaseList = get('releases_list');
+    $prevReleaseName = array_shift($releaseList);
+    if($prevReleaseName){
+        writeln('<info>Trying to inflate database mir24_dep_{{release_name}} with release data from mir24_dep_'.$prevReleaseName.'</info>');
+        run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
+            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} mir24_dep_{{release_name}}');
+    } else {
+        writeln('<error>No previous release found, can`t inflate database, stop.</error>');
+        die;
+    }
+//	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE mir24_dep_{{release_name}}"');
+})->onHosts('prod-frontend');
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
