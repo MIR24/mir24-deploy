@@ -22,6 +22,10 @@ set('laravel_version', function () {
     return $version;
 });
 
+set('dbname_releasing', function () {
+    return 'mir24_dep_'.get('release_name');
+});
+
 set('default_timeout', 1800);
 set('copy_dirs', ['vendor']);
 
@@ -172,10 +176,8 @@ task('symlink:uploaded', function () {
 
 desc('Create new database to proceed release');
 task('db:create', function (){
-    $DBName = 'mir24_dep_'.get('release_name');
-    writeln('<info>Trying to create database '.$DBName.'</info>');
-	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE mir24_dep_{{release_name}}"');
-    set('dbname_releasing',$DBName);
+    writeln('<info>Trying to create database '.get('dbname_releasing').'</info>');
+	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE '.get('dbname_releasing').'"');
 })->onHosts('prod-frontend');
 
 desc('Inflate database with data from current released version');
@@ -183,9 +185,9 @@ task('db:pipe', function (){
     $releaseList = get('releases_list');
     $prevReleaseName = array_shift($releaseList);
     if($prevReleaseName){
-        writeln('<info>Trying to inflate database mir24_dep_{{release_name}} with release data from mir24_dep_'.$prevReleaseName.'</info>');
+        writeln('<info>Trying to inflate database '.get('dbname_releasing').' with release data from mir24_dep_'.$prevReleaseName.'</info>');
         run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
-            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} mir24_dep_{{release_name}}');
+            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} '.get('dbname_releasing'));
     } else {
         writeln('<error>No previous release found, can`t inflate database, stop.</error>');
         die;
