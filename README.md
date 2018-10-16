@@ -1,5 +1,5 @@
 ## Requirements
-`Nodejs`, `npm`, `webpack`, `tsd`, Linux `acl`, `php-memcached`, `php-imap` `php-curl`, `php-gmp`, [deployer](https://deployer.org/docs/installation) must be installed.
+`Nodejs`, `npm`, `webpack`, `tsd`, Linux `acl` and `sed`, `php-memcached`, `php-imap` `php-curl`, `php-gmp`, [deployer](https://deployer.org/docs/installation) must be installed.
 
 `Memcached` and `mysql-server` must be installed and served.
 
@@ -95,6 +95,12 @@ ________
 ________
 
 Run `dep artisan:key:generate test` if `APP_KEY` in `shared/.env` still empty even after deploy complete.
+________
+
+Run `dep config:current` to get current releases list.
+________
+
+Use `dep config:current` to get current release name.
 
 ## TODO
 Deployer default procedure clones repo each time into the new `release/*` folder. 
