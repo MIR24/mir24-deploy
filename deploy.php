@@ -12,6 +12,10 @@ set('release_name', function () use ($releaseDate) {
     return $releaseDate;
 });
 
+set('db_name_releasing', function () {
+    return 'mir24_dep_'.get('release_name');
+});
+
 set('ssh_multiplexing', true);
 
 //Override laravel recipe due to 'Not a git repo' error
@@ -20,10 +24,6 @@ set('laravel_version', function () {
     preg_match_all('/(\d+\.?)+/', $result, $matches);
     $version = $matches[0][0] ?? 5.5;
     return $version;
-});
-
-set('dbname_releasing', function () {
-    return 'mir24_dep_'.get('release_name');
 });
 
 set('default_timeout', 1800);
@@ -113,7 +113,7 @@ task('config:clone', function () {
 desc('Infect app configuration with DB credentials');
 task('config:configure:DB', function () {
     run("sed -i -E 's/DB_HOST=.*/DB_HOST=".get('dbhost')."/g' ".get('release_path').'/.env');
-    run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE=".get('dbname_releasing')."/g' ".get('release_path').'/.env');
+    run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE=".get('db_name_releasing')."/g' ".get('release_path').'/.env');
     run("sed -i -E 's/DB_USERNAME=.*/DB_USERNAME=".get('dbuser')."/g' ".get('release_path').'/.env');
     run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD=".get('dbpass')."/g' ".get('release_path').'/.env');
 })->onHosts(
@@ -176,8 +176,8 @@ task('symlink:uploaded', function () {
 
 desc('Create new database to proceed release');
 task('db:create', function (){
-    writeln('<info>Trying to create database '.get('dbname_releasing').'</info>');
-	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE '.get('dbname_releasing').'"');
+    writeln('<info>Trying to create database '.get('db_name_releasing').'</info>');
+	run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE '.get('db_name_releasing').'"');
 })->onHosts('prod-frontend');
 
 desc('Inflate database with data from current released version');
@@ -185,9 +185,9 @@ task('db:pipe', function (){
     $releaseList = get('releases_list');
     $prevReleaseName = array_shift($releaseList);
     if($prevReleaseName){
-        writeln('<info>Trying to inflate database '.get('dbname_releasing').' with release data from mir24_dep_'.$prevReleaseName.'</info>');
+        writeln('<info>Trying to inflate database '.get('db_name_releasing').' with release data from mir24_dep_'.$prevReleaseName.'</info>');
         run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
-            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} '.get('dbname_releasing'));
+            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} '.get('db_name_releasing'));
     } else {
         writeln('<error>No previous release found, can`t inflate database, stop.</error>');
         die;
