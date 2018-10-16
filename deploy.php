@@ -106,7 +106,6 @@ task('config:clone', function () {
     'test-backend',
     'prod-backend');
 
-//TODO maybe better path procedure for shared dir
 desc('Infect app configuration with DB credentials');
 task('config:configure:DB', function () {
     run("sed -i -E 's/DB_HOST=.*/DB_HOST=".get('dbhost')."/g' ".get('release_path').'/.env');
