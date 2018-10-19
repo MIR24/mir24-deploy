@@ -178,13 +178,11 @@ task('gulp', function () {
 
 desc('Generate application key');
 task('artisan:key:generate', function () {
-	$output = run('if [ -f {{deploy_path}}/current/artisan ]; then {{bin/php}} {{deploy_path}}/current/artisan key:generate; fi');
+	$output = run('cd {{release_path}} && {{bin/php}} artisan key:generate');
 	writeln('<info>' . $output . '</info>');
 })->onHosts(
     'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend');
+    'prod-frontend');
 
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
