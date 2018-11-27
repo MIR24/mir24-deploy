@@ -1,5 +1,5 @@
 ## Requirements
-`Nodejs`, `npm`, `webpack`, `tsd`, Linux `acl`, `php-memcached`, `php-imap` `php-curl`, `php-gmp`, [deployer](https://deployer.org/docs/installation) must be installed.
+`Nodejs`, `npm`, `webpack`, `tsd`, Linux `acl` and `sed`, `php-memcached`, `php-imap` `php-curl`, `php-gmp`, [deployer](https://deployer.org/docs/installation) must be installed.
 
 `Memcached` and `mysql-server` must be installed and served.
 
