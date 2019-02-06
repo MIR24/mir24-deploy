@@ -6,7 +6,11 @@ require 'recipe/laravel.php';
 require 'recipe/rsync.php';
 
 $releaseDate = date('d_M_H_i');
-inventory('hosts.yml');
+
+$hostsDev = 'hosts.dev.yml';
+$hostsProd = 'hosts.yml';
+$hostsInventory = (file_exists($hostsDev) && is_readable($hostsDev)) ? $hostsDev : $hostsProd;
+inventory($hostsInventory);
 
 set('release_name', function () use ($releaseDate) {
     return $releaseDate;
