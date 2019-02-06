@@ -16,7 +16,12 @@ $ git clone git@github.com:MIR24/mir24-deploy.git /home/www/dev7.mir24.tv/mir24-
 ```
 Install dependencies with `$ composer install`;
 
-Configure `deploy_path` and DB connection at `hosts.yml`.<br>
+Create local hosts configuration file: 
+```
+$ cp hosts.yml hosts.dev.yml
+```
+
+Configure `deploy_path` and DB connection at `hosts.dev.yml`.<br>
 
 Download initial dump file (you can get example dump file [here](https://drive.google.com/open?id=1L2vvkscPZYIWjAU8QA_TtN3wbay4Yi3A)).<br>
 Copy mysql dump into the root folder of this deploy project:
