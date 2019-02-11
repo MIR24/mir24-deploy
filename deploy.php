@@ -69,6 +69,7 @@ task('deploy', [
     'deploy:writable',
     'artisan:storage:link',
     'artisan:cache:clear',
+    'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
     'artisan:migrate',
