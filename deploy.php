@@ -65,10 +65,12 @@ task('deploy', [
     'npm:install',
     'npm:build',
     'gulp',
+    'gulp:switch',
     'rsync',
-    'deploy:writable',
     'artisan:storage:link',
+    'deploy:writable',
     'artisan:cache:clear',
+    'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
     'artisan:migrate',
@@ -176,6 +178,12 @@ task('npm:build', function () {
 desc('Build assets');
 task('gulp', function () {
     run('cd {{release_path}} && gulp');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend');
+
+task('gulp:switch', function () {
+    run('cd {{release_path}} && gulp switch:new_version');
 })->onHosts(
     'test-frontend',
     'prod-frontend');
