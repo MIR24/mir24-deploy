@@ -82,6 +82,49 @@ task('deploy', [
     'success',
 ]);
 
+desc('Build release');
+task('release:build', [
+    'deploy:info',
+    'deploy:prepare',
+    'deploy:lock',
+    'db:create',
+    'db:pipe',
+    'db:init',
+    'deploy:release',
+    'deploy:update_code',
+    'db:clone',
+    'deploy:shared',
+    'config:clone',
+    'config:configure:DB',
+    'deploy:copy_dirs',
+    'deploy:vendors',
+    'tsd:install',
+    'npm:install',
+    'npm:build',
+    'gulp',
+    'gulp:switch',
+    'rsync',
+    'artisan:storage:link',
+    'deploy:writable',
+    'artisan:cache:clear',
+    'artisan:key:generate',
+    'artisan:config:cache',
+    'artisan:optimize',
+    'artisan:migrate',
+    'symlink:uploaded',
+    'deploy:clear_paths',
+    'deploy:unlock'
+]);
+
+desc('Switch to release built');
+task('release:switch', [
+    'deploy:lock',
+    'deploy:symlink',
+    'deploy:unlock',
+    'cleanup',
+    'success'
+]);
+
 //Executing initial SQL dump
 desc('Executing initial dump may took a minute');
 task('db:init', function () {

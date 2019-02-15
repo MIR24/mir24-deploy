@@ -56,6 +56,11 @@ Configure web-server document roots at `/home/www/dev7.mir24.tv/frontend-server/
 
 ## Routine
 
+`$ dep release:build prod` starts two-stage release built procedure.
+After built is finished, apllication could be checked at some specific domain like dev-pre.mir24.tv.
+Folder under `release` symlink must be configured as a webserver docroot.
+After check is done, procedure can be finished with `$ dep release:switch prod`. 
+
 `$ dep deploy test` builds whole application.
 
 Default branch deployed is `master` except `photobank-client` component.<br>
