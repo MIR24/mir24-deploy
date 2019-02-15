@@ -120,6 +120,7 @@ desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
     'deploy:symlink',
+    'memcached:flush',
     'deploy:unlock',
     'cleanup',
     'success'
