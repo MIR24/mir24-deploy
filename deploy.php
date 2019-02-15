@@ -247,6 +247,18 @@ task('symlink:uploaded', function () {
     'test-frontend',
     'prod-frontend');
 
+desc('Flush memcached');
+task('memcached:flush', function () {
+  $ports = get("memcached_ports");
+  foreach($ports as $port){
+    writeln('<info>Flushing memcached at ' . $port . '</info>');
+    $output = run("echo 'flush_all' | nc localhost $port");
+    writeln('<info>' . $output . '</info>');
+  }
+})->onHosts(
+  'test-frontend',
+  'prod-frontend');
+
 //Filter external recipes
 task('artisan:migrate')->onHosts(
     'test-frontend',
