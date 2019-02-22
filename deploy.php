@@ -20,6 +20,10 @@ set('db_name_releasing', function () {
     return 'mir24_dep_'.get('release_name');
 });
 
+set('cache_prefix_releasing', function () {
+    return 'mir24_'.get('release_name');
+});
+
 set('ssh_multiplexing', true);
 
 //Override laravel recipe due to 'Not a git repo' error
@@ -96,6 +100,7 @@ task('release:build', [
     'deploy:shared',
     'config:clone',
     'config:configure:DB',
+    'config:configure:cache_prefix',
     'deploy:copy_dirs',
     'deploy:vendors',
     'tsd:install',
@@ -175,6 +180,13 @@ task('config:configure:DB', function () {
     run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE=".get('db_name_releasing')."/g' ".get('release_path').'/.env');
     run("sed -i -E 's/DB_USERNAME=.*/DB_USERNAME=".get('dbuser')."/g' ".get('release_path').'/.env');
     run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD=".get('dbpass')."/g' ".get('release_path').'/.env');
+})->onHosts(
+    'prod-frontend',
+    'prod-backend');
+
+desc('Infect app configuration with cache prefix');
+task('config:configure:cache_prefix', function () {
+    run("sed -i -E 's/CACHE_PREFIX=.*/CACHE_PREFIX=".get('cache_prefix_releasing')."/g' ".get('release_path').'/.env');
 })->onHosts(
     'prod-frontend',
     'prod-backend');
