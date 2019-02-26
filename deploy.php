@@ -66,6 +66,7 @@ task('deploy', [
     'npm:build',
     'gulp',
     'gulp:switch',
+    'rsync:setup',
     'rsync',
     'artisan:storage:link',
     'deploy:writable',
@@ -246,6 +247,18 @@ task('symlink:uploaded', function () {
 })->onHosts(
     'test-frontend',
     'prod-frontend');
+
+desc('Setup rsync destination path');
+task('rsync:setup', function () {
+    if(test('[ ! -r {{rsync_dest_release}} ]')) {
+        writeln('<comment>Looks like BC components is built lonely</comment>');
+        set('rsync_dest', get('rsync_dest_current'));
+    } else {
+        set('rsync_dest', get('rsync_dest_release'));
+    }
+    return;
+})->onHosts(
+    'test-backend-client');
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
