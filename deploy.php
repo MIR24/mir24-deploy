@@ -2,7 +2,7 @@
 namespace Deployer;
 
 require __DIR__ . '/vendor/autoload.php';
-require 'recipe/laravel.php';
+require __DIR__ . '/recipe/laravel.php';
 require 'recipe/rsync.php';
 
 $releaseDate = date('d_M_H_i');
@@ -21,14 +21,6 @@ set('db_name_releasing', function () {
 });
 
 set('ssh_multiplexing', true);
-
-//Override laravel recipe due to 'Not a git repo' error
-set('laravel_version', function () {
-    $result = run('cd {{release_path}} && {{bin/php}} artisan --version');
-    preg_match_all('/(\d+\.?)+/', $result, $matches);
-    $version = $matches[0][0] ?? 5.5;
-    return $version;
-});
 
 set('default_timeout', 1800);
 set('copy_dirs', ['vendor']);
@@ -137,7 +129,7 @@ task('db:init', function () {
         return;
     }
 	writeln('<info>SQL dump execution, please wait..</info>');
-	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} mir24_7 < {{dump_file}}');
+	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} {{dbname}} < {{dump_file}}');
 })->onHosts('test-frontend')->onStage('test');
 
 //TODO configure database as subrepo
@@ -152,8 +144,8 @@ task('db:clone', function () {
 
 desc('Create new database to proceed release');
 task('db:create', function (){
-    writeln('<info>Trying to create database '.get('db_name_releasing').'</info>');
-    run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE '.get('db_name_releasing').'"');
+    writeln('<info>Trying to create database {{db_name_releasing}}</info>');
+    run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE {{db_name_releasing}}"');
 })->onHosts('prod-frontend');
 
 desc('Inflate database with data from current released version');
@@ -161,9 +153,9 @@ task('db:pipe', function (){
     $releaseList = get('releases_list');
     $prevReleaseName = array_shift($releaseList);
     if($prevReleaseName){
-        writeln('<info>Trying to inflate database '.get('db_name_releasing').' with release data from mir24_dep_'.$prevReleaseName.'</info>');
+        writeln('<info>Trying to inflate database {{db_name_releasing}} with release data from mir24_dep_'.$prevReleaseName.'</info>');
         run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
-            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} '.get('db_name_releasing'));
+            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} {{db_name_releasing}}');
     } else {
         writeln('<error>No previous release found, can`t inflate database, stop.</error>');
         die;
@@ -172,10 +164,10 @@ task('db:pipe', function (){
 
 desc('Infect app configuration with DB credentials');
 task('config:configure:DB', function () {
-    run("sed -i -E 's/DB_HOST=.*/DB_HOST=".get('dbhost')."/g' ".get('release_path').'/.env');
-    run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE=".get('db_name_releasing')."/g' ".get('release_path').'/.env');
-    run("sed -i -E 's/DB_USERNAME=.*/DB_USERNAME=".get('dbuser')."/g' ".get('release_path').'/.env');
-    run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD=".get('dbpass')."/g' ".get('release_path').'/.env');
+    run("sed -i -E 's/DB_HOST=.*/DB_HOST={{dbhost}}/g' {{release_path}}/.env");
+    run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE={{db_name_releasing}}/g' {{release_path}}/.env");
+    run("sed -i -E 's/DB_USERNAME=.*/DB_USERNAME={{dbuser}}/g' {{release_path}}/.env");
+    run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD={{dbpass}}/g' {{release_path}}/.env");
 })->onHosts(
     'prod-frontend',
     'prod-backend');
@@ -196,10 +188,11 @@ task('npm:install', function () {
     if (has('previous_release')) {
         if (test('[ -d {{previous_release}}/node_modules ]')) {
             run('cp -R {{previous_release}}/node_modules {{release_path}}');
-        } else
-			writeln('<info>Packages installation may take a while for the first time..</info>');
+        } else {
+            writeln('<info>Packages installation may take a while for the first time..</info>');
+        }
     }
-    run("cd {{release_path}} && {{bin/npm}} install", ["timeout" => 1800]);
+    run('cd {{release_path}} && {{bin/npm}} install', ['timeout' => 1800]);
 })->onHosts(
     'test-frontend',
     'prod-frontend',
@@ -209,12 +202,12 @@ task('npm:install', function () {
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
 task('tsd:install', function () {
-    run("cd {{release_path}} && tsd install", ["timeout" => 1800]);
+    run('cd {{release_path}} && tsd install', ['timeout' => 1800]);
 })->onHosts('test-photobank-client');
 
 desc('Build npm packages');
 task('npm:build', function () {
-    run("cd {{release_path}} && {{bin/npm}} run build", ["timeout" => 1800]);
+    run('cd {{release_path}} && {{bin/npm}} run build', ['timeout' => 1800]);
 })->onHosts(
     'test-backend-client',
     'test-photobank-client');
