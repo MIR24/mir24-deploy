@@ -70,6 +70,7 @@ task('deploy', [
     'artisan:storage:link',
     'deploy:writable',
     'artisan:cache:clear',
+    'memcached:restart',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
@@ -120,7 +121,7 @@ desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
     'deploy:symlink',
-    'memcached:flush',
+    'memcached:restart',
     'deploy:unlock',
     'cleanup',
     'success'
@@ -137,7 +138,7 @@ task('db:init', function () {
         return;
     }
 	writeln('<info>SQL dump execution, please wait..</info>');
-	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} mir24_7 < {{dump_file}}');
+	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} {{dbname}} < {{dump_file}}');
 })->onHosts('test-frontend')->onStage('test');
 
 //TODO configure database as subrepo
@@ -249,16 +250,11 @@ task('symlink:uploaded', function () {
     'prod-frontend');
 
 desc('Flush memcached');
-task('memcached:flush', function () {
-  $ports = get("memcached_ports");
-  foreach($ports as $port){
-    writeln('<info>Flushing memcached at ' . $port . '</info>');
-    $output = run("echo 'flush_all' | nc localhost $port");
-    writeln('<info>' . $output . '</info>');
-  }
-})->onHosts(
-  'test-frontend',
-  'prod-frontend');
+task('memcached:restart', function () {
+    if (has('previous_release')) {
+        run('cd {{previous_release}} && {{bin/php}} artisan cache:restart');
+    }
+})->onHosts('prod-frontend');
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
