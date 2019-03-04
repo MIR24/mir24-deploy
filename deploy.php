@@ -3,6 +3,7 @@ namespace Deployer;
 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/recipe/laravel.php';
+require __DIR__ . '/recipe/sphinx.php';
 require 'recipe/rsync.php';
 
 $releaseDate = date('d_M_H_i');
@@ -51,6 +52,7 @@ task('deploy', [
     'deploy:shared',
     'config:clone',
     'config:configure:DB',
+    'config:sphinx',
     'deploy:copy_dirs',
     'deploy:vendors',
     'tsd:install',
@@ -89,6 +91,7 @@ task('release:build', [
     'deploy:shared',
     'config:clone',
     'config:configure:DB',
+    'config:sphinx',
     'deploy:copy_dirs',
     'deploy:vendors',
     'tsd:install',
@@ -236,7 +239,7 @@ task('artisan:key:generate', function () {
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
     // Will use simple≤ two steps switch.
-    run("cd {{release_path}} && {{bin/symlink}} {{uploaded_path}} public/uploaded"); // Atomic override symlink.
+    run('cd {{release_path}} && {{bin/symlink}} {{uploaded_path}} public/uploaded'); // Atomic override symlink.
 })->onHosts(
     'test-frontend',
     'prod-frontend');
@@ -249,9 +252,13 @@ task('rsync:setup', function () {
     } else {
         set('rsync_dest', get('rsync_dest_release'));
     }
-    return;
-})->onHosts(
-    'test-backend-client');
+})->onHosts('test-backend-client');
+
+//Sphinx tasks filter
+task('config:sphinx')->onHosts(
+    'prod-frontend',
+    'prod-backend');
+task('sphinx:index')->onHosts('prod-frontend');
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
