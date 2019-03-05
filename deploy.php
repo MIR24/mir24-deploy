@@ -62,7 +62,6 @@ task('deploy', [
     'artisan:storage:link',
     'deploy:writable',
     'artisan:cache:clear',
-    'memcached:restart',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
