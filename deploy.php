@@ -4,6 +4,7 @@ namespace Deployer;
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/recipe/laravel.php';
 require __DIR__ . '/recipe/sphinx.php';
+require __DIR__ . '/recipe/db.php';
 require 'recipe/rsync.php';
 
 $releaseDate = date('d_M_H_i');
@@ -15,10 +16,6 @@ inventory($hostsInventory);
 
 set('release_name', function () use ($releaseDate) {
     return $releaseDate;
-});
-
-set('db_name_releasing', function () {
-    return 'mir24_dep_'.get('release_name');
 });
 
 set('ssh_multiplexing', true);
@@ -123,57 +120,25 @@ task('release:switch', [
     'success'
 ]);
 
-//Executing initial SQL dump
-desc('Executing initial dump may took a minute');
-task('db:init', function () {
-    writeln('<info>Check if {{dump_file}} exists</info>');
+// Executing initial SQL dump
+task('db:init')->onHosts('test-frontend')->onStage('test');
 
-    if(test('[ ! -r {{dump_file}} ]')) {
-        writeln('<comment>No dump file found, proceed</comment>');
-
-        return;
-    }
-	writeln('<info>SQL dump execution, please wait..</info>');
-	run('cd {{deploy_path}} && mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} {{dbname}} < {{dump_file}}');
-})->onHosts('test-frontend')->onStage('test');
-
+// Cloning database repository
 //TODO configure database as subrepo
-desc('Cloning database repository');
-task('db:clone', function () {
-    run('cd {{release_path}} && git clone git@github.com:MIR24/database.git');
-})->onHosts(
+task('db:clone')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
     'prod-backend');
 
-desc('Create new database to proceed release');
-task('db:create', function (){
-    writeln('<info>Trying to create database {{db_name_releasing}}</info>');
-    run('mysql -h{{dbhost}} -u{{dbuser}} -p{{dbpass}} -e "CREATE DATABASE {{db_name_releasing}}"');
-})->onHosts('prod-frontend');
+// Create new database
+task('db:create')->onHosts('prod-frontend');
 
-desc('Inflate database with data from current released version');
-task('db:pipe', function (){
-    $releaseList = get('releases_list');
-    $prevReleaseName = array_shift($releaseList);
-    if($prevReleaseName){
-        writeln('<info>Trying to inflate database {{db_name_releasing}} with release data from mir24_dep_'.$prevReleaseName.'</info>');
-        run('mysqldump --single-transaction --insert-ignore -u{{dbuser}} -p{{dbpass}} mir24_dep_'.$prevReleaseName.
-            ' | mysql  -u{{dbuser}} -p{{dbpass}} -h{{dbhost}} {{db_name_releasing}}');
-    } else {
-        writeln('<error>No previous release found, can`t inflate database, stop.</error>');
-        die;
-    }
-})->onHosts('prod-frontend');
+// Inflate database
+task('db:pipe')->onHosts('prod-frontend');
 
-desc('Infect app configuration with DB credentials');
-task('config:configure:DB', function () {
-    run("sed -i -E 's/DB_HOST=.*/DB_HOST={{dbhost}}/g' {{release_path}}/.env");
-    run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE={{db_name_releasing}}/g' {{release_path}}/.env");
-    run("sed -i -E 's/DB_USERNAME=.*/DB_USERNAME={{dbuser}}/g' {{release_path}}/.env");
-    run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD={{dbpass}}/g' {{release_path}}/.env");
-})->onHosts(
+// Inject db config into env
+task('config:configure:DB')->onHosts(
     'prod-frontend',
     'prod-backend');
 
