@@ -42,7 +42,7 @@ desc('Inflate database with data from current released version');
 task('db:pipe', function () {
     if (get('db_name_previous')) {
         writeln('<info>Trying to inflate database {{db_name_releasing}} with release data from {{db_name_previous}}</info>');
-        run('mysqldump --single-transaction --insert-ignore -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
+        run('mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
             ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
     } elseif (get('db_source_name')) {
         writeln('<info>Trying to inflate database {{db_name_releasing}} with initial data from {{db_source_name}}</info>');
