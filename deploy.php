@@ -65,6 +65,7 @@ task('deploy', [
     'artisan:storage:link',
     'deploy:writable',
     'artisan:cache:clear',
+    'memcached:restart',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
@@ -116,6 +117,7 @@ desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
     'deploy:symlink',
+    'memcached:restart',
     'deploy:unlock',
     'cleanup',
     'success'
@@ -243,6 +245,13 @@ task('symlink:uploaded', function () {
 })->onHosts(
     'test-frontend',
     'prod-frontend');
+
+desc('Flush memcached');
+task('memcached:restart', function () {
+    if (has('previous_release')) {
+        run('cd {{previous_release}} && {{bin/php}} artisan cache:restart');
+    }
+})->onHosts('prod-frontend');
 
 desc('Setup rsync destination path');
 task('rsync:setup', function () {
