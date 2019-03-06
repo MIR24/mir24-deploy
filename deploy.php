@@ -52,8 +52,8 @@ task('deploy', [
     'config:sphinx',
     'deploy:copy_dirs',
     'deploy:vendors',
-    'tsd:install',
     'npm:install',
+    'tsd:install',
     'npm:build',
     'gulp',
     'gulp:switch',
@@ -91,8 +91,8 @@ task('release:build', [
     'config:sphinx',
     'deploy:copy_dirs',
     'deploy:vendors',
-    'tsd:install',
     'npm:install',
+    'tsd:install',
     'npm:build',
     'gulp',
     'gulp:switch',
@@ -146,7 +146,7 @@ task('config:configure:DB')->onHosts(
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
 task('config:clone', function () {
-        run('cp {{env_example_file}} {{release_path}}/.env');
+    run('cp {{env_example_file}} {{release_path}}/.env');
 })->onHosts(
     'test-frontend',
     'prod-frontend',
@@ -169,21 +169,28 @@ task('npm:install', function () {
     'test-frontend',
     'prod-frontend',
     'test-backend-client',
-    'test-photobank-client'
+    'prod-backend-client',
+    'test-photobank-client',
+    'prod-photobank-client'
 );
 
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
 task('tsd:install', function () {
-    run('cd {{release_path}} && tsd install', ['timeout' => 1800]);
-})->onHosts('test-photobank-client');
+    run('cd {{release_path}} && {{bin/npm}} run tsd -- install', ['timeout' => 1800]);
+})->onHosts(
+    'test-photobank-client',
+    'prod-photobank-client'
+);
 
 desc('Build npm packages');
 task('npm:build', function () {
     run('cd {{release_path}} && {{bin/npm}} run build', ['timeout' => 1800]);
 })->onHosts(
     'test-backend-client',
-    'test-photobank-client'
+    'prod-backend-client',
+    'test-photobank-client',
+    'prod-photobank-client'
 );
 
 desc('Build assets');
@@ -203,8 +210,8 @@ task('gulp:switch', function () {
 
 desc('Generate application key');
 task('artisan:key:generate', function () {
-	$output = run('cd {{release_path}} && {{bin/php}} artisan key:generate');
-	writeln('<info>' . $output . '</info>');
+    $output = run('cd {{release_path}} && {{bin/php}} artisan key:generate');
+    writeln('<info>' . $output . '</info>');
 })->onHosts(
     'test-frontend',
     'prod-frontend'
@@ -226,6 +233,8 @@ task('memcached:restart', function () {
     }
 })->onHosts('prod-frontend');
 
+//Rsync tasks
+
 desc('Setup rsync destination path');
 task('rsync:setup', function () {
     if(test('[ ! -r {{rsync_dest_release}} ]')) {
@@ -237,6 +246,42 @@ task('rsync:setup', function () {
 })->onHosts(
     'test-backend-client',
     'prod-backend-client'
+);
+
+desc('Rsync override');
+task('rsync', function() {
+    $config = get('rsync');
+
+    $src = get('rsync_src');
+    while (is_callable($src)) {
+        $src = $src();
+    }
+
+    if (!trim($src)) {
+        throw new \RuntimeException('You need to specify a source path.');
+    }
+
+    $dst = get('rsync_dest');
+    while (is_callable($dst)) {
+        $dst = $dst();
+    }
+
+    if (!trim($dst)) {
+        throw new \RuntimeException('You need to specify a destination path.');
+    }
+
+    $server = \Deployer\Task\Context::get()->getHost();
+    if ($server instanceof \Deployer\Host\Localhost) {
+        runLocally("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
+        return;
+    }
+
+    run("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
+})->onHosts(
+    'test-backend-client',
+    'test-photobank-client',
+    'prod-backend-client',
+    'prod-photobank-client'
 );
 
 //Sphinx tasks filter
@@ -298,10 +343,4 @@ task('deploy:copy_dirs')->onHosts(
 task('deploy:clear_paths')->onHosts(
     'prod-frontend',
     'prod-backend'
-);
-task('rsync')->onHosts(
-    'test-backend-client',
-    'test-photobank-client',
-    'prod-backend-client',
-    'prod-photobank-client'
 );
