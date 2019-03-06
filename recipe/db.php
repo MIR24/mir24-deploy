@@ -55,9 +55,17 @@ task('db:pipe', function () {
 });
 
 desc('Infect app configuration with DB credentials');
-task('config:configure:DB', function () {
+task('config:inject:DB', function () {
     run("sed -i -E 's/DB_HOST=.*/DB_HOST={{db_app_host}}/g' {{release_path}}/.env");
     run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE={{db_name_releasing}}/g' {{release_path}}/.env");
     run("sed -i -E 's/DB_USERNAME=.*/DB_USERNAME={{db_app_user}}/g' {{release_path}}/.env");
     run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD={{db_app_pass}}/g' {{release_path}}/.env");
+});
+
+desc('Infect app configuration with sphinx credentials');
+task('config:inject:sphinx', function () {
+    run("sed -i -E 's/sql_host[[:blank:]]*=.*/sql_host={{db_app_host}}/g' {{release_path}}/extconfig/sphinx.conf");
+    run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_name_releasing}}/g' {{release_path}}/extconfig/sphinx.conf");
+    run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{release_path}}/extconfig/sphinx.conf");
+    run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{release_path}}/extconfig/sphinx.conf");
 });
