@@ -225,7 +225,9 @@ task('rsync:setup', function () {
     } else {
         set('rsync_dest', get('rsync_dest_release'));
     }
-})->onHosts('test-backend-client');
+})->onHosts(
+    'test-backend-client',
+    'prod-backend-client');
 
 //Sphinx tasks filter
 task('config:sphinx')->onHosts(
@@ -277,5 +279,7 @@ task('deploy:clear_paths')->onHosts(
     'prod-frontend',
     'prod-backend');
 task('rsync')->onHosts(
+    'test-backend-client',
     'test-photobank-client',
-    'test-backend-client');
+    'prod-backend-client',
+    'prod-photobank-client');
