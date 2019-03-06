@@ -52,8 +52,8 @@ task('deploy', [
     'config:sphinx',
     'deploy:copy_dirs',
     'deploy:vendors',
-    'tsd:install',
     'npm:install',
+    'tsd:install',
     'npm:build',
     'gulp',
     'gulp:switch',
@@ -91,8 +91,8 @@ task('release:build', [
     'config:sphinx',
     'deploy:copy_dirs',
     'deploy:vendors',
-    'tsd:install',
     'npm:install',
+    'tsd:install',
     'npm:build',
     'gulp',
     'gulp:switch',
@@ -128,7 +128,8 @@ task('db:clone')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
-    'prod-backend');
+    'prod-backend'
+);
 
 // Create new database
 task('db:create')->onHosts('prod-frontend');
@@ -139,17 +140,19 @@ task('db:pipe')->onHosts('prod-frontend');
 // Inject db config into env
 task('config:configure:DB')->onHosts(
     'prod-frontend',
-    'prod-backend');
+    'prod-backend'
+);
 
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
 task('config:clone', function () {
-        run('cp {{env_example_file}} {{release_path}}/.env');
+    run('cp {{env_example_file}} {{release_path}}/.env');
 })->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
-    'prod-backend');
+    'prod-backend'
+);
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -166,41 +169,53 @@ task('npm:install', function () {
     'test-frontend',
     'prod-frontend',
     'test-backend-client',
-    'test-photobank-client');
+    'prod-backend-client',
+    'test-photobank-client',
+    'prod-photobank-client'
+);
 
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
 task('tsd:install', function () {
-    run('cd {{release_path}} && tsd install', ['timeout' => 1800]);
-})->onHosts('test-photobank-client');
+    run('cd {{release_path}} && {{bin/npm}} run tsd -- install', ['timeout' => 1800]);
+})->onHosts(
+    'test-photobank-client',
+    'prod-photobank-client'
+);
 
 desc('Build npm packages');
 task('npm:build', function () {
     run('cd {{release_path}} && {{bin/npm}} run build', ['timeout' => 1800]);
 })->onHosts(
     'test-backend-client',
-    'test-photobank-client');
+    'prod-backend-client',
+    'test-photobank-client',
+    'prod-photobank-client'
+);
 
 desc('Build assets');
 task('gulp', function () {
     run('cd {{release_path}} && gulp');
 })->onHosts(
     'test-frontend',
-    'prod-frontend');
+    'prod-frontend'
+);
 
 task('gulp:switch', function () {
     run('cd {{release_path}} && gulp switch:new_version');
 })->onHosts(
     'test-frontend',
-    'prod-frontend');
+    'prod-frontend'
+);
 
 desc('Generate application key');
 task('artisan:key:generate', function () {
-	$output = run('cd {{release_path}} && {{bin/php}} artisan key:generate');
-	writeln('<info>' . $output . '</info>');
+    $output = run('cd {{release_path}} && {{bin/php}} artisan key:generate');
+    writeln('<info>' . $output . '</info>');
 })->onHosts(
     'test-frontend',
-    'prod-frontend');
+    'prod-frontend'
+);
 
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
@@ -208,7 +223,8 @@ task('symlink:uploaded', function () {
     run('cd {{release_path}} && {{bin/symlink}} {{uploaded_path}} public/uploaded'); // Atomic override symlink.
 })->onHosts(
     'test-frontend',
-    'prod-frontend');
+    'prod-frontend'
+);
 
 desc('Flush memcached');
 task('memcached:restart', function () {
@@ -216,6 +232,8 @@ task('memcached:restart', function () {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:restart');
     }
 })->onHosts('prod-frontend');
+
+//Rsync tasks
 
 desc('Setup rsync destination path');
 task('rsync:setup', function () {
@@ -227,59 +245,102 @@ task('rsync:setup', function () {
     }
 })->onHosts(
     'test-backend-client',
-    'prod-backend-client');
+    'prod-backend-client'
+);
+
+desc('Rsync override');
+task('rsync', function() {
+    $config = get('rsync');
+
+    $src = get('rsync_src');
+    while (is_callable($src)) {
+        $src = $src();
+    }
+
+    if (!trim($src)) {
+        throw new \RuntimeException('You need to specify a source path.');
+    }
+
+    $dst = get('rsync_dest');
+    while (is_callable($dst)) {
+        $dst = $dst();
+    }
+
+    if (!trim($dst)) {
+        throw new \RuntimeException('You need to specify a destination path.');
+    }
+
+    $server = \Deployer\Task\Context::get()->getHost();
+    if ($server instanceof \Deployer\Host\Localhost) {
+        runLocally("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
+        return;
+    }
+
+    run("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
+})->onHosts(
+    'test-backend-client',
+    'test-photobank-client',
+    'prod-backend-client',
+    'prod-photobank-client'
+);
 
 //Sphinx tasks filter
 task('config:sphinx')->onHosts(
     'prod-frontend',
-    'prod-backend');
+    'prod-backend'
+);
 task('sphinx:index')->onHosts('prod-frontend');
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
     'test-frontend',
-    'prod-frontend');
+    'prod-frontend'
+);
 task('artisan:storage:link')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
-    'prod-backend');
+    'prod-backend'
+);
 task('artisan:cache:clear')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
-    'prod-backend');
+    'prod-backend'
+);
 task('artisan:config:cache')->onHosts(
     'test-frontend',
-    'prod-frontend');
+    'prod-frontend'
+);
 task('artisan:optimize')->onHosts(
     'test-frontend',
-    'prod-frontend');
+    'prod-frontend'
+);
 task('deploy:vendors')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
-    'prod-backend');
+    'prod-backend'
+);
 task('deploy:shared')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
-    'prod-backend');
+    'prod-backend'
+);
 task('deploy:writable')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
-    'prod-backend');
+    'prod-backend'
+);
 task('deploy:copy_dirs')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
-    'prod-backend');
+    'prod-backend'
+);
 task('deploy:clear_paths')->onHosts(
     'prod-frontend',
-    'prod-backend');
-task('rsync')->onHosts(
-    'test-backend-client',
-    'test-photobank-client',
-    'prod-backend-client',
-    'prod-photobank-client');
+    'prod-backend'
+);
