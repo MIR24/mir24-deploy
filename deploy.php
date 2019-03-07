@@ -48,7 +48,8 @@ task('deploy', [
     'db:clone',
     'deploy:shared',
     'config:clone',
-    'config:configure:DB',
+    'config:inject:DB',
+    'config:inject:sphinx',
     'config:sphinx',
     'deploy:copy_dirs',
     'deploy:vendors',
@@ -74,6 +75,8 @@ task('deploy', [
     'success',
 ]);
 
+after('deploy', 'sphinx:index');
+
 desc('Build release');
 task('release:build', [
     'deploy:info',
@@ -87,7 +90,7 @@ task('release:build', [
     'db:clone',
     'deploy:shared',
     'config:clone',
-    'config:configure:DB',
+    'config:inject:DB',
     'config:sphinx',
     'deploy:copy_dirs',
     'deploy:vendors',
@@ -108,6 +111,8 @@ task('release:build', [
     'deploy:clear_paths',
     'deploy:unlock'
 ]);
+
+after('release:build', 'sphinx:index');
 
 desc('Switch to release built');
 task('release:switch', [
@@ -138,10 +143,12 @@ task('db:create')->onHosts('prod-frontend');
 task('db:pipe')->onHosts('prod-frontend');
 
 // Inject db config into env
-task('config:configure:DB')->onHosts(
+task('config:inject:DB')->onHosts(
     'prod-frontend',
     'prod-backend'
 );
+
+task('config:inject:sphinx')->onHosts('prod-frontend');
 
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');

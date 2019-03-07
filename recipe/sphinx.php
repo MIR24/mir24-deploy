@@ -34,7 +34,7 @@ set('sphinx_prefix', function () {
 
 set('sphinx_config_param', function () {
     $configPath = getSphinxParam('config');
-    return empty($configPath) ? '' : "--config={$configPath}";
+    return empty($configPath) ? '' : "--config {$configPath}";
 });
 
 desc('Infect app configuration with sphinx credentials');
@@ -46,5 +46,5 @@ task('config:sphinx', function () {
 
 desc('Reindex sphinx');
 task('sphinx:index', function () {
-    run('{{bin/indexer}} --rotate --all {{sphinx_config_param}}');
+    run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet {{sphinx_config_param}}');
 });
