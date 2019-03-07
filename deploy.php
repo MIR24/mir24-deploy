@@ -75,6 +75,8 @@ task('deploy', [
     'success',
 ]);
 
+after('deploy', 'sphinx:index');
+
 desc('Build release');
 task('release:build', [
     'deploy:info',
