@@ -28,6 +28,7 @@ set('application', 'my_project');
 
 // Project repository
 set('repository', '');
+set('git_cache', true);
 
 set('bin/npm', function () {
     return run('which npm');
@@ -123,6 +124,80 @@ task('release:switch', [
     'cleanup',
     'success'
 ]);
+
+//Hotfixes
+task('hotfix:FS:server', [
+    'deploy:info',
+    'deploy:lock',
+    'pull_code',
+    'artisan:config:cache',
+    'artisan:optimize',
+    'memcached:flush',
+    'deploy:unlock',
+    'success',
+])->onHosts('prod-frontend');
+
+task('hotfix:FS:assets', [
+    'deploy:info',
+    'deploy:lock',
+    'pull_code',
+    'gulp',
+    'gulp:switch',
+    'memcached:flush',
+    'deploy:unlock',
+    'success',
+])->onHosts('prod-frontend');
+
+task('hotfix:BS', [
+    'deploy:info',
+    'deploy:lock',
+    'pull_code',
+    'artisan:cache:clear',
+    'deploy:unlock',
+    'success',
+])->onHosts('prod-backend');
+
+task('hotfix:BC', [
+    'deploy:info',
+    'deploy:lock',
+    'pull_code',
+    'npm:install',
+    'npm:build',
+    'rsync:setup',
+    'rsync',
+    'deploy:unlock',
+    'success',
+])->onHosts('prod-backend-client');
+
+task('hotfix:PB', [
+    'deploy:info',
+    'deploy:lock',
+    'pull_code',
+    'npm:install',
+    'tsd:install',
+    'npm:build',
+    'rsync:setup',
+    'rsync',
+    'deploy:unlock',
+    'success',
+])->onHosts('prod-photobank-client');
+
+desc('Pull the code from repo');
+task('pull_code', function () {
+    $branch = get('branch');
+    $git = get('bin/git');
+    $quiet = isQuiet() ? '-q' : '';
+    $branchName = !empty($branch) ? $branch : '';
+    $options = [
+        'tty' => get('git_tty', false),
+    ];
+
+    // Enter deploy_path if present
+    if (has('deploy_path')) {
+        cd('{{deploy_path}}');
+    }
+    run("cd {{release_path}} && $git pull origin $branchName $quiet --depth=1 --no-commit 2>&1", $options);
+});
 
 // Executing initial SQL dump
 task('db:init')->onHosts('test-frontend')->onStage('test');
@@ -233,10 +308,17 @@ task('symlink:uploaded', function () {
     'prod-frontend'
 );
 
-desc('Flush memcached');
+desc('Restart memcached');
 task('memcached:restart', function () {
     if (has('previous_release')) {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:restart');
+    }
+})->onHosts('prod-frontend');
+
+desc('Flush memcached');
+task('memcached:flush', function () {
+    if (has('previous_release')) {
+        run('cd {{previous_release}} && {{bin/php}} artisan cache:flush');
     }
 })->onHosts('prod-frontend');
 
@@ -244,15 +326,17 @@ task('memcached:restart', function () {
 
 desc('Setup rsync destination path');
 task('rsync:setup', function () {
-    if(test('[ ! -r {{rsync_dest_release}} ]')) {
+    $dest = 'release';
+    if(test('[ ! -r {{rsync_dest_base}}/release ]')) {
         writeln('<comment>Looks like BC component is built lonely</comment>');
-        set('rsync_dest', get('rsync_dest_current'));
-    } else {
-        set('rsync_dest', get('rsync_dest_release'));
+        $dest = 'current';
     }
+    set('rsync_dest', parse("{{rsync_dest_base}}/{$dest}/{{rsync_dest_relative}}"));
 })->onHosts(
     'test-backend-client',
-    'prod-backend-client'
+    'prod-backend-client',
+    'test-photobank-client',
+    'prod-photobank-client'
 );
 
 desc('Rsync override');
