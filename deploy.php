@@ -326,15 +326,17 @@ task('memcached:flush', function () {
 
 desc('Setup rsync destination path');
 task('rsync:setup', function () {
-    if(test('[ ! -r {{rsync_dest_release}} ]')) {
+    $dest = 'release';
+    if(test('[ ! -r {{rsync_dest_base}}/release ]')) {
         writeln('<comment>Looks like BC component is built lonely</comment>');
-        set('rsync_dest', get('rsync_dest_current'));
-    } else {
-        set('rsync_dest', get('rsync_dest_release'));
+        $dest = 'current';
     }
+    set('rsync_dest', parse("{{rsync_dest_base}}/{$dest}/{{rsync_dest_relative}}"));
 })->onHosts(
     'test-backend-client',
-    'prod-backend-client'
+    'prod-backend-client',
+    'test-photobank-client',
+    'prod-photobank-client'
 );
 
 desc('Rsync override');
