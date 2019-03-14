@@ -375,6 +375,17 @@ task('rsync', function() {
     'prod-photobank-client'
 );
 
+task('rsync:static', function() {
+    if(has('rsync_marker') && test('[ ! -f {{rsync_marker}} ]')) {
+        writeln('<info>File marker not found, shutdown.</info>');
+        return;
+    }
+
+    run("sudo rsync -a '{{rsync_src}}/' '{{rsync_dest}}/'");
+})->onHosts(
+    'prod-backend'
+);
+
 //Sphinx tasks filter
 task('config:sphinx')->onHosts(
     'prod-frontend',
