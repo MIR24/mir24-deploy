@@ -132,7 +132,6 @@ task('hotfix:FS:server', [
     'pull_code',
     'artisan:config:cache',
     'artisan:optimize',
-    'memcached:flush',
     'deploy:unlock',
     'success',
 ])->onHosts('prod-frontend');
@@ -143,7 +142,6 @@ task('hotfix:FS:assets', [
     'pull_code',
     'gulp',
     'gulp:switch',
-    'memcached:flush',
     'deploy:unlock',
     'success',
 ])->onHosts('prod-frontend');
@@ -186,8 +184,7 @@ desc('Pull the code from repo');
 task('pull_code', function () {
     $branch = get('branch');
     $git = get('bin/git');
-    $quiet = isQuiet() ? '-q' : '';
-    $branchName = !empty($branch) ? $branch : '';
+    $branchName = !empty($branch) ? "origin/$branch" : 'origin/master';
     $options = [
         'tty' => get('git_tty', false),
     ];
@@ -196,7 +193,9 @@ task('pull_code', function () {
     if (has('deploy_path')) {
         cd('{{deploy_path}}');
     }
-    run("cd {{release_path}} && $git pull origin $branchName $quiet --depth=1 --no-commit 2>&1", $options);
+
+    run("cd {{release_path}} && $git fetch --all", $options);
+    run("cd {{release_path}} && $git checkout --force $branchName", $options);
 });
 
 // Executing initial SQL dump
