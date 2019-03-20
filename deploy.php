@@ -62,7 +62,7 @@ task('deploy', [
     'rsync:setup',
     'rsync',
     'artisan:storage:link',
-    'deploy:writable',
+    'deploy:permissions',
     'artisan:cache:clear',
     'artisan:key:generate',
     'artisan:config:cache',
@@ -102,7 +102,7 @@ task('release:build', [
     'gulp:switch',
     'rsync',
     'artisan:storage:link',
-    'deploy:writable',
+    'deploy:permissions',
     'artisan:cache:clear',
     'artisan:key:generate',
     'artisan:config:cache',
@@ -197,6 +197,23 @@ task('pull_code', function () {
     run("cd {{release_path}} && $git fetch --all", $options);
     run("cd {{release_path}} && $git checkout --force $branchName", $options);
 });
+
+desc('Execute special commands if any or run deploy:writable otherwise');
+task('deploy:permissions', function() {
+    if (has('admin_commands')) {
+        $commands = get('admin_commands');
+        foreach ($commands as $command) {
+            run($command);
+        }
+    } else {
+        invoke('deploy:writable');
+    }
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend'
+);
 
 // Executing initial SQL dump
 task('db:init')->onHosts('test-frontend')->onStage('test');
