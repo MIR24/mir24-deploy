@@ -202,7 +202,8 @@ desc('Execute special commands if any or run deploy:writable otherwise');
 task('deploy:permissions', function() {
     if (has('admin_commands')) {
         $commands = get('admin_commands');
-        foreach ($commands as $command) {
+        foreach ($commands as $key => $command) {
+            writeln("Executing command: $key");
             run($command);
         }
     } else {

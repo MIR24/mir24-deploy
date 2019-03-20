@@ -112,6 +112,11 @@ ________
 
 Use `dep config:current` to get current release name.
 
+________
+
+You can use custom commands instead of default "deploy:writable" to setup correct dir permissions. 
+To do that simply add "admin_commands" section to host (example for `prod-frontend` host can be found at hosts.yml);
+
 ## TODO
 Deployer default procedure clones repo each time into the new `release/*` folder. 
 It's not neccesary for test bench.
