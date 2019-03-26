@@ -100,15 +100,16 @@ task('release:build', [
     'npm:build',
     'gulp',
     'gulp:switch',
+    'rsync:setup',
     'rsync',
     'artisan:storage:link',
-    'deploy:permissions',
     'artisan:cache:clear',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
     'artisan:migrate',
     'symlink:uploaded',
+    'deploy:permissions',
     'deploy:clear_paths',
     'deploy:unlock'
 ]);
