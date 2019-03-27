@@ -3,7 +3,6 @@ namespace Deployer;
 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/recipe/laravel.php';
-require __DIR__ . '/recipe/sphinx.php';
 require __DIR__ . '/recipe/db.php';
 require 'recipe/rsync.php';
 
@@ -49,9 +48,9 @@ task('deploy', [
     'db:clone',
     'deploy:shared',
     'config:clone',
-    'config:inject:DB',
-    'config:inject:sphinx',
-    'config:sphinx',
+    'config:services',
+    'config:inject',
+    'sphinx:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -91,8 +90,9 @@ task('release:build', [
     'db:clone',
     'deploy:shared',
     'config:clone',
-    'config:inject:DB',
-    'config:sphinx',
+    'config:services',
+    'config:inject',
+    'sphinx:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -235,14 +235,6 @@ task('db:create')->onHosts('prod-frontend');
 // Inflate database
 task('db:pipe')->onHosts('prod-frontend');
 
-// Inject db config into env
-task('config:inject:DB')->onHosts(
-    'prod-frontend',
-    'prod-backend'
-);
-
-task('config:inject:sphinx')->onHosts('prod-frontend');
-
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
 task('config:clone', function () {
@@ -253,6 +245,42 @@ task('config:clone', function () {
     'test-backend',
     'prod-backend'
 );
+
+desc('Propagate configuration file');
+task('config:inject', function () {
+    $customEnv = get('inject_env', []);
+    foreach ($customEnv as $key => $value) {
+        run("sed -i -E 's/$key=.*/$key=$value/g' {{release_path}}/.env");
+    }
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend'
+);
+
+//Sphinx related tasks
+set('bin/indexer', function () {
+    return run('which indexer');
+});
+
+desc('Copy services config examples');
+task('config:services', function() {
+    run('cp {{sphinx_conf_src}} {{sphinx_conf_dest}}');
+})->onHosts('prod-services');
+
+desc('Reindex sphinx');
+task('sphinx:index', function () {
+    run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet --config {{sphinx_conf_dest}}');
+})->onHosts('prod-services');
+
+desc('Infect app configuration with sphinx credentials');
+task('sphinx:inject', function () {
+    run("sed -i -E 's/sql_host[[:blank:]]*=.*/sql_host={{db_app_host}}/g' {{sphinx_config_path}}");
+    run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_name_releasing}}/g' {{sphinx_config_path}}");
+    run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{sphinx_config_path}}");
+    run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{sphinx_config_path}}");
+})->onHosts('prod-frontend');
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -403,13 +431,6 @@ task('rsync:static', function() {
 })->onHosts(
     'prod-backend'
 );
-
-//Sphinx tasks filter
-task('config:sphinx')->onHosts(
-    'prod-frontend',
-    'prod-backend'
-);
-task('sphinx:index')->onHosts('prod-frontend');
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
