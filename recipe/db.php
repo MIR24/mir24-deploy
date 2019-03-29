@@ -15,7 +15,12 @@ set('db_name_previous', function () {
 //TODO configure database as subrepo
 desc('Cloning database repository');
 task('db:clone', function () {
-    run('cd {{release_path}} && git clone git@github.com:MIR24/database.git');
+    $branch = get('branch');
+    $at = '';
+    if (!empty($branch)) {
+        $at = "-b $branch";
+    }
+    run("cd {{release_path}} && {{bin/git}} clone $at git@github.com:MIR24/database.git");
 });
 
 //Executing initial SQL dump
