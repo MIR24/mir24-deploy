@@ -15,7 +15,8 @@ set('db_name_previous', function () {
 //TODO configure database as subrepo
 desc('Cloning database repository');
 task('db:clone', function () {
-    $branch = get('branch');
+    $defaultBranch = get('branch');
+    $branch = get('db_clone_branch', $defaultBranch);
     $at = '';
     if (!empty($branch)) {
         $at = "-b $branch";
