@@ -8,7 +8,7 @@ set('db_name_releasing', function () {
 
 set('db_name_previous', function () {
     $releaseList = get('releases_list');
-    if(count($releaseList) > 1) $prevReleaseName = $releaseList[count($releaseList)-2];
+    if(count($releaseList) > 1) $prevReleaseName = $releaseList[count($releaseList)-1];
     else $prevReleaseName = null;
     return $prevReleaseName ? ('mir24_dep_' . $prevReleaseName) : '';
 });
