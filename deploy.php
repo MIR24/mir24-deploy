@@ -126,60 +126,34 @@ task('release:switch', [
     'success'
 ]);
 
-//Hotfixes
-task('hotfix:FS:server', [
+task('hotfix', [
     'deploy:info',
+    'deploy:prepare',
     'deploy:lock',
+    'deploy:release',
+    'rsync:warmup',
     'pull_code',
-    'artisan:config:cache',
-    'artisan:optimize',
-    'deploy:unlock',
-    'success',
-])->onHosts('prod-frontend');
-
-task('hotfix:FS:assets', [
-    'deploy:info',
-    'deploy:lock',
-    'pull_code',
-    'gulp',
-    'gulp:switch',
-    'deploy:unlock',
-    'success',
-])->onHosts('prod-frontend');
-
-task('hotfix:BS', [
-    'deploy:info',
-    'deploy:lock',
-    'pull_code',
-    'artisan:cache:clear',
-    'deploy:unlock',
-    'success',
-])->onHosts('prod-backend');
-
-task('hotfix:BC', [
-    'deploy:info',
-    'deploy:lock',
-    'pull_code',
-    'npm:install',
-    'npm:build',
-    'rsync:setup',
-    'rsync',
-    'deploy:unlock',
-    'success',
-])->onHosts('prod-backend-client');
-
-task('hotfix:PB', [
-    'deploy:info',
-    'deploy:lock',
-    'pull_code',
+    'deploy:shared',
     'npm:install',
     'tsd:install',
     'npm:build',
+    'gulp',
+    'gulp:switch',
     'rsync:setup',
     'rsync',
+    'artisan:storage:link',
+    'deploy:permissions',
+    'artisan:cache:clear',
+    'artisan:key:generate',
+    'artisan:config:cache',
+    'artisan:optimize',
+    'symlink:uploaded',
+    'deploy:clear_paths',
+    'deploy:symlink',
     'deploy:unlock',
+    'cleanup',
     'success',
-])->onHosts('prod-photobank-client');
+]);
 
 desc('Pull the code from repo');
 task('pull_code', function () {
