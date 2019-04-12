@@ -133,6 +133,7 @@ task('hotfix', [
     'deploy:release',
     'rsync:warmup',
     'pull_code',
+    'deploy:vendors',
     'deploy:shared',
     'npm:install',
     'tsd:install',
