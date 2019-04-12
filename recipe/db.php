@@ -2,18 +2,30 @@
 
 namespace Deployer;
 
+use Symfony\Component\Dotenv\Dotenv;
+
 set('db_name_releasing', function () {
     return 'mir24_dep_' . get('release_name');
 });
 
 set('db_name_previous', function () {
-    $releaseList = get('releases_list');
-    writeln("<info>Found release list:</info>");
-    var_dump($releaseList);
-    if(count($releaseList) > 1) $prevReleaseName = $releaseList[1];
-    else $prevReleaseName = null;
-    writeln("<info>Got prev release name:</info>" . $prevReleaseName);
-    return $prevReleaseName ? ('mir24_dep_' . $prevReleaseName) : '';
+    try{
+        $currentReleasePath = get('current_path');
+    } catch(\Deployer\Exception\RuntimeException $e){
+        $currentReleasePath = null;
+    }
+
+    if($currentReleasePath){
+        $dotenv = new Dotenv();
+        $releasedDBName = $dotenv->parse(run('cat ' . $currentReleasePath . '/.env'))["DB_DATABASE"];
+        writeln('<info>Released DB found: '.$releasedDBName.'</info>');
+
+        return $releasedDBName;
+    } else {
+        writeln('<comment>Any released DB not found</comment>');
+
+        return '';
+    }
 });
 
 //TODO configure database as subrepo

@@ -1,5 +1,8 @@
 {
     "require-dev": {
         "deployer/recipes": "^6.1"
+    },
+    "require": {
+        "symfony/dotenv": "^4.2"
     }
 }
