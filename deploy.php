@@ -119,6 +119,8 @@ after('release:build', 'sphinx:index');
 desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
+    'config:switch',
+    'artisan:config:cache',
     'deploy:symlink',
     'memcached:restart',
     'deploy:unlock',
@@ -225,6 +227,19 @@ task('config:clone', function () {
 desc('Propagate configuration file');
 task('config:inject', function () {
     $customEnv = get('inject_env', []);
+    foreach ($customEnv as $key => $value) {
+        run("sed -i -E 's/$key=.*/$key=$value/g' {{release_path}}/.env");
+    }
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend'
+);
+
+desc('Propagate configuration file');
+task('config:switch', function () {
+    $customEnv = get('inject_env_switched', []);
     foreach ($customEnv as $key => $value) {
         run("sed -i -E 's/$key=.*/$key=$value/g' {{release_path}}/.env");
     }
