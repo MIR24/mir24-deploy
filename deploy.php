@@ -423,6 +423,33 @@ task('rsync:static', function() {
     'prod-backend'
 );
 
+desc('Purge project folder');
+task('deploy:purge', function() {
+    $hostName = Task\Context::get()->getHost()->getHostname();
+    $message = "You're about to purge $hostName, check options:";
+    $availableChoices = array("Purge host", "Continue without purge");
+    $purgeChoise = askConfirmation($message, $default = false);
+    if($purgeChoise) {
+        if (test('[ -d {{deploy_path}} ]')) {
+            run('sudo -H -u deploy rm {{deploy_path}} -r');
+        } else {
+            writeln("<comment>No such directory {{deploy_path}}</comment>");
+        }
+    }
+    else {
+        writeln("<info>Continue without purging host</info>");
+    }
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend',
+    'test-backend-client',
+    'test-photobank-client',
+    'prod-backend-client',
+    'prod-photobank-client'
+);
+
 //Filter external recipes
 task('artisan:migrate')->onHosts(
     'test-frontend',
