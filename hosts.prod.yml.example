@@ -1,0 +1,153 @@
+.dev3-base: &dev3-base
+    hostname: deploy@195.128.157.246
+    stage: dev3
+    keep_releases: 2
+    http_user: www-data
+    forwardAgent: true
+    multiplexing: true
+    sshOptions:
+        StrictHostKeyChecking: no
+
+.prod-settings: &prod-settings
+    db_app_host: 192.168.227.23
+    db_app_user: admin_user
+    db_app_pass: admin_pass
+    env_example_file: "{{release_path}}/.env.example"
+    inject_env:
+        DB_HOST: "{{db_app_host}}"
+        DB_DATABASE: "{{db_name_releasing}}"
+        DB_USERNAME: "{{db_app_user}}"
+        DB_PASSWORD: "{{db_app_pass}}"
+        SPHINX_HOST: 127.0.0.1
+        SPHINX_PORT: 9312
+        SPHINX_PREFIX: mir24_
+        CACHE_ENABLED: 'false'
+        CDN_IMAGES_URL: '""'
+    inject_env_switched:
+        CACHE_ENABLED: 'true'
+        CDN_IMAGES_URL: '""'
+
+prod-services:
+    <<: *dev3-base
+    repository: git@github.com:MIR24/mir24tv-service-scripts.git
+    deploy_path: /var/www/mir24-app/mir24tv-service-scripts
+    sphinx_conf_src: "{{release_path}}/sphinxsearch/sphinx.conf"
+    sphinx_conf_dest: "{{release_path}}/build/sphinx.conf"
+    rsync:
+        options: []
+        flags: rzuEa
+        include: []
+        include-file:
+        exclude: []
+        exclude-file:
+        filter: []
+        filter-file:
+        filter-perdir:
+
+prod-frontend:
+    <<: *dev3-base
+    <<: *prod-settings
+    repository: git@github.com:MIR24/frontend-server.git
+    composer_action: install
+    writable_mode: chown
+    writable_use_sudo: true
+    writable_dirs: [bootstrap/cache, storage]
+    shared_dirs: [storage/logs]
+    shared_files: [storage/.htpasswd]
+    deploy_path: /var/www/mir24-app/mir24.tv
+    uploaded_path: /var/www/mir24-app/editors.mir24.tv/shared/public/uploaded
+    clear_paths:
+        - .env.example
+        - phpunit.xml
+        - README.md
+        - server.php
+        - travis.yml
+    rsync:
+        options: []
+        flags: rzuEa
+        include: []
+        include-file:
+        exclude: []
+        exclude-file:
+        filter: []
+        filter-file:
+        filter-perdir:
+    db_source_host: 192.168.227.23
+    db_source_name: mir24_n1
+    db_source_user: admin_user
+    db_source_pass: admin_pass
+    db_dep_user: deploy_user
+    db_dep_pass: deploy_pass
+    sphinx_config_path: /var/www/mir24-app/mir24tv-service-scripts/release/build/sphinx.conf
+    dump_file: /home/deploy/mir24_7.sql
+    deploy_permissions:
+        - 'sudo chown -R deploy:www-data ./'
+        - 'sudo chmod 770 -R ./.git ./bootstrap/cache ./storage'
+        - 'find .  -not -path "./.git" -not -path "./bootstrap/cache" -not -path "./storage" -exec sudo chmod 750 {} \;'
+
+
+prod-backend:
+    <<: *dev3-base
+    <<: *prod-settings
+    repository: git@github.com:MIR24/backend-server.git
+    composer_action: update
+    writable_mode: chown
+    writable_use_sudo: true
+    writable_dirs: [public/uploaded, storage]
+    shared_dirs: [public/uploaded, storage/logs]
+    shared_files: []
+    deploy_path: /var/www/mir24-app/editors.mir24.tv
+    rsync_marker: /home/rsync-dev/mount-marker
+    rsync_src: /home/rsync-dev
+    rsync_dest: /var/www/mir24-app/editors.mir24.tv/shared/public/uploaded
+    rsync:
+        options: []
+        flags: rzuEa
+        include: []
+        include-file:
+        exclude: []
+        exclude-file:
+        filter: []
+        filter-file:
+        filter-perdir:
+    deploy_permissions:
+        - 'sudo chown -R deploy:www-data ./'
+        - 'sudo chmod 770 -R ./.git ./storage'
+        - 'find .  -not -path "./.git" -not -path "./storage" -exec sudo chmod 750 {} \;'
+
+prod-backend-client:
+    <<: *dev3-base
+    repository: git@github.com:MIR24/backend-client.git
+    deploy_path: /var/www/mir24-app/backend-client
+    rsync_src: "{{release_path}}/build"
+    rsync_dest_base: /var/www/mir24-app/editors.mir24.tv
+    rsync_dest_relative: public
+    rsync:
+        options: []
+        flags: rzuEa
+        include: []
+        include-file:
+        exclude: []
+        exclude-file:
+        filter: []
+        filter-file:
+        filter-perdir:
+
+prod-photobank-client:
+    <<: *dev3-base
+    repository: git@github.com:MIR24/photobank-searchkit.git
+    branch: external-client-dev
+    deploy_path: /var/www/mir24-app/photobank-client
+    rsync_src: "{{release_path}}/dist"
+    rsync_dest_base: /var/www/mir24-app/editors.mir24.tv
+    rsync_dest_relative: public/ftb
+    rsync:
+        options: []
+        flags: rzE
+        include: []
+        include-file:
+        exclude: []
+        exclude-file:
+        filter: []
+        filter-file:
+        filter-perdir:
