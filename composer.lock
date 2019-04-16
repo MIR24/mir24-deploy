@@ -4,25 +4,86 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "57048c775b2c5baa4017d39a688bbd73",
-    "packages": [],
-    "packages-dev": [
+    "content-hash": "361d10366235aca4267a47e29d87316b",
+    "packages": [
         {
-            "name": "deployer/recipes",
-            "version": "6.1.6",
+            "name": "symfony/dotenv",
+            "version": "v4.2.5",
             "source": {
                 "type": "git",
-                "url": "https://github.com/deployphp/recipes.git",
-                "reference": "3054c925628af1d514baa3f94c58abd53c62863c"
+                "url": "https://github.com/symfony/dotenv.git",
+                "reference": "b541d63b83532be55a020db8ed2e50598385a583"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/deployphp/recipes/zipball/3054c925628af1d514baa3f94c58abd53c62863c",
-                "reference": "3054c925628af1d514baa3f94c58abd53c62863c",
+                "url": "https://api.github.com/repos/symfony/dotenv/zipball/b541d63b83532be55a020db8ed2e50598385a583",
+                "reference": "b541d63b83532be55a020db8ed2e50598385a583",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.1.3"
+            },
+            "require-dev": {
+                "symfony/process": "~3.4|~4.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.2-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Dotenv\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Registers environment variables from a .env file",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "dotenv",
+                "env",
+                "environment"
+            ],
+            "time": "2019-04-01T07:32:59+00:00"
+        }
+    ],
+    "packages-dev": [
+        {
+            "name": "deployer/recipes",
+            "version": "6.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/deployphp/recipes.git",
+                "reference": "4c2470771249fbff55eb56429c29d74590768fa0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/deployphp/recipes/zipball/4c2470771249fbff55eb56429c29d74590768fa0",
+                "reference": "4c2470771249fbff55eb56429c29d74590768fa0",
                 "shasum": ""
             },
             "replace": {
                 "deployer/recipes": "self.version"
+            },
+            "require-dev": {
+                "deployer/deployer": "^6.3"
             },
             "type": "library",
             "autoload": {
@@ -56,7 +117,7 @@
                 "slack",
                 "yarn"
             ],
-            "time": "2018-09-15T02:39:00+00:00"
+            "time": "2019-01-17T06:03:27+00:00"
         }
     ],
     "aliases": [],
