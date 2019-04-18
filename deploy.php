@@ -13,6 +13,10 @@ $hostsProd = 'hosts.yml';
 $hostsInventory = (file_exists($hostsDev) && is_readable($hostsDev)) ? $hostsDev : $hostsProd;
 inventory($hostsInventory);
 
+function escapeForSed($value) {
+    return addcslashes($value, '/|&?!"\'');
+}
+
 set('release_name', function () use ($releaseDate) {
     return $releaseDate;
 });
@@ -230,7 +234,7 @@ desc('Propagate configuration file');
 task('config:inject', function () {
     $customEnv = get('inject_env', []);
     foreach ($customEnv as $key => $value) {
-        $escapedValue = addcslashes($value, '/|&?!"\'');
+        $escapedValue = escapeForSed($value);
         run("sed -i -E 's/$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
 })->onHosts(
@@ -244,7 +248,8 @@ desc('Propagate configuration file');
 task('config:switch', function () {
     $customEnv = get('inject_env_switched', []);
     foreach ($customEnv as $key => $value) {
-        run("sed -i -E 's/$key=.*/$key=$value/g' {{release_path}}/.env");
+        $escapedValue = escapeForSed($value);
+        run("sed -i -E 's/$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
 })->onHosts(
     'test-frontend',
