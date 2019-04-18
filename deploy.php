@@ -230,7 +230,8 @@ desc('Propagate configuration file');
 task('config:inject', function () {
     $customEnv = get('inject_env', []);
     foreach ($customEnv as $key => $value) {
-        run("sed -i -E 's/$key=.*/$key=$value/g' {{release_path}}/.env");
+        $escapedValue = addcslashes($value, '/|&?!"\'');
+        run("sed -i -E 's/$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
 })->onHosts(
     'test-frontend',
