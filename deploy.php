@@ -115,8 +115,6 @@ task('release:build', [
     'deploy:unlock'
 ]);
 
-after('release:build', 'sphinx:index');
-
 desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
@@ -128,6 +126,8 @@ task('release:switch', [
     'cleanup',
     'success'
 ]);
+
+after('release:switch', 'sphinx:index');
 
 task('hotfix', [
     'deploy:info',
