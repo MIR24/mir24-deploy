@@ -342,6 +342,14 @@ task('artisan:key:generate', function () {
     'prod-frontend'
 );
 
+desc('Clear cache table');
+task('artisan:cache:clear_table', function () {
+    run('cd {{release_path}} && {{bin/php}} artisan cachetable:clear --truncate');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend'
+);
+
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
     // Will use simple≤ two steps switch.
