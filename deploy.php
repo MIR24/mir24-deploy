@@ -131,8 +131,6 @@ task('release:switch', [
     'success'
 ]);
 
-after('release:switch', 'sphinx:index');
-
 task('hotfix', [
     'deploy:info',
     'deploy:prepare',
