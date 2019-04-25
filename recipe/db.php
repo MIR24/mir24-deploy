@@ -2,14 +2,30 @@
 
 namespace Deployer;
 
+use Symfony\Component\Dotenv\Dotenv;
+
 set('db_name_releasing', function () {
     return 'mir24_dep_' . get('release_name');
 });
 
 set('db_name_previous', function () {
-    $releaseList = get('releases_list');
-    $prevReleaseName = array_shift($releaseList);
-    return $prevReleaseName ? ('mir24_dep_' . $prevReleaseName) : '';
+    try{
+        $currentReleasePath = get('current_path');
+    } catch(\Deployer\Exception\RuntimeException $e){
+        $currentReleasePath = null;
+    }
+
+    if($currentReleasePath){
+        $dotenv = new Dotenv();
+        $releasedDBName = $dotenv->parse(run('cat ' . $currentReleasePath . '/.env'))["DB_DATABASE"];
+        writeln('<info>Released DB found: '.$releasedDBName.'</info>');
+
+        return $releasedDBName;
+    } else {
+        writeln('<comment>Any released DB not found</comment>');
+
+        return '';
+    }
 });
 
 //TODO configure database as subrepo
@@ -60,18 +76,27 @@ task('db:pipe', function () {
     }
 });
 
-desc('Infect app configuration with DB credentials');
-task('config:inject:DB', function () {
-    run("sed -i -E 's/DB_HOST=.*/DB_HOST={{db_app_host}}/g' {{release_path}}/.env");
-    run("sed -i -E 's/DB_DATABASE=.*/DB_DATABASE={{db_name_releasing}}/g' {{release_path}}/.env");
-    run("sed -i -E 's/DB_USERNAME=.*/DB_USERNAME={{db_app_user}}/g' {{release_path}}/.env");
-    run("sed -i -E 's/DB_PASSWORD=.*/DB_PASSWORD={{db_app_pass}}/g' {{release_path}}/.env");
-});
+desc('Inflate database of releasing built with data from source configured. Run standalone.');
+task('db:repipe', function () {
+    $releaseExists = test('[ -h {{deploy_path}}/release ]');
+    if($releaseExists){
+        $releaseInProgressName = get('releases_list')[0];
+        set('release_name', $releaseInProgressName);
 
-desc('Infect app configuration with sphinx credentials');
-task('config:inject:sphinx', function () {
-    run("sed -i -E 's/sql_host[[:blank:]]*=.*/sql_host={{db_app_host}}/g' {{release_path}}/extconfig/sphinx.conf");
-    run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_name_releasing}}/g' {{release_path}}/extconfig/sphinx.conf");
-    run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{release_path}}/extconfig/sphinx.conf");
-    run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{release_path}}/extconfig/sphinx.conf");
-});
+        if (get('db_name_previous')) {
+            writeln('<info>Trying to inflate database {{db_name_releasing}} with release data from {{db_name_previous}}</info>');
+            run('mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
+                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
+        } elseif (get('db_source_name')) {
+            writeln('<info>Trying to inflate database {{db_name_releasing}} with initial data from {{db_source_name}}</info>');
+            run('mysqldump --single-transaction --insert-ignore -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
+                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
+        } else {
+            writeln('<error>No previous release found, can`t inflate database, stop.</error>');
+            die;
+        }
+    }
+    else {
+        writeln("<comment>Can't define target DB, no release built found.</comment>");
+    }
+})->onHosts('prod-frontend');

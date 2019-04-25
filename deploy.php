@@ -3,7 +3,6 @@ namespace Deployer;
 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/recipe/laravel.php';
-require __DIR__ . '/recipe/sphinx.php';
 require __DIR__ . '/recipe/db.php';
 require 'recipe/rsync.php';
 
@@ -13,6 +12,10 @@ $hostsDev = 'hosts.dev.yml';
 $hostsProd = 'hosts.yml';
 $hostsInventory = (file_exists($hostsDev) && is_readable($hostsDev)) ? $hostsDev : $hostsProd;
 inventory($hostsInventory);
+
+function escapeForSed($value) {
+    return addcslashes($value, '/|&?!"\'');
+}
 
 set('release_name', function () use ($releaseDate) {
     return $releaseDate;
@@ -49,9 +52,9 @@ task('deploy', [
     'db:clone',
     'deploy:shared',
     'config:clone',
-    'config:inject:DB',
-    'config:inject:sphinx',
-    'config:sphinx',
+    'config:services',
+    'config:inject',
+    'sphinx:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -70,6 +73,7 @@ task('deploy', [
     'symlink:uploaded',
     'deploy:permissions',
     'deploy:clear_paths',
+    'memcached:restart',
     'deploy:symlink',
     'deploy:unlock',
     'cleanup',
@@ -91,8 +95,9 @@ task('release:build', [
     'db:clone',
     'deploy:shared',
     'config:clone',
-    'config:inject:DB',
-    'config:sphinx',
+    'config:services',
+    'config:inject',
+    'sphinx:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -114,11 +119,11 @@ task('release:build', [
     'deploy:unlock'
 ]);
 
-after('release:build', 'sphinx:index');
-
 desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
+    'config:switch',
+    'artisan:config:cache',
     'deploy:symlink',
     'memcached:restart',
     'deploy:unlock',
@@ -126,60 +131,36 @@ task('release:switch', [
     'success'
 ]);
 
-//Hotfixes
-task('hotfix:FS:server', [
+task('hotfix', [
     'deploy:info',
+    'deploy:prepare',
     'deploy:lock',
+    'deploy:release',
+    'rsync:warmup',
     'pull_code',
-    'artisan:config:cache',
-    'artisan:optimize',
-    'deploy:unlock',
-    'success',
-])->onHosts('prod-frontend');
-
-task('hotfix:FS:assets', [
-    'deploy:info',
-    'deploy:lock',
-    'pull_code',
-    'gulp',
-    'gulp:switch',
-    'deploy:unlock',
-    'success',
-])->onHosts('prod-frontend');
-
-task('hotfix:BS', [
-    'deploy:info',
-    'deploy:lock',
-    'pull_code',
-    'artisan:cache:clear',
-    'deploy:unlock',
-    'success',
-])->onHosts('prod-backend');
-
-task('hotfix:BC', [
-    'deploy:info',
-    'deploy:lock',
-    'pull_code',
-    'npm:install',
-    'npm:build',
-    'rsync:setup',
-    'rsync',
-    'deploy:unlock',
-    'success',
-])->onHosts('prod-backend-client');
-
-task('hotfix:PB', [
-    'deploy:info',
-    'deploy:lock',
-    'pull_code',
+    'deploy:vendors',
+    'deploy:shared',
     'npm:install',
     'tsd:install',
     'npm:build',
+    'gulp',
+    'gulp:switch',
     'rsync:setup',
     'rsync',
+    'artisan:storage:link',
+    'deploy:permissions',
+    'artisan:cache:clear',
+    'artisan:key:generate',
+    'artisan:config:cache',
+    'artisan:optimize',
+    'symlink:uploaded',
+    'deploy:clear_paths',
+    'memcached:flush',
+    'deploy:symlink',
     'deploy:unlock',
+    'cleanup',
     'success',
-])->onHosts('prod-photobank-client');
+]);
 
 desc('Pull the code from repo');
 task('pull_code', function () {
@@ -236,14 +217,6 @@ task('db:create')->onHosts('prod-frontend');
 // Inflate database
 task('db:pipe')->onHosts('prod-frontend');
 
-// Inject db config into env
-task('config:inject:DB')->onHosts(
-    'prod-frontend',
-    'prod-backend'
-);
-
-task('config:inject:sphinx')->onHosts('prod-frontend');
-
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
 task('config:clone', function () {
@@ -254,6 +227,57 @@ task('config:clone', function () {
     'test-backend',
     'prod-backend'
 );
+
+desc('Propagate configuration file');
+task('config:inject', function () {
+    $customEnv = get('inject_env', []);
+    foreach ($customEnv as $key => $value) {
+        $escapedValue = escapeForSed($value);
+        run("sed -i -E 's/$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
+    }
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend'
+);
+
+desc('Propagate configuration file');
+task('config:switch', function () {
+    $customEnv = get('inject_env_switched', []);
+    foreach ($customEnv as $key => $value) {
+        $escapedValue = escapeForSed($value);
+        run("sed -i -E 's/$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
+    }
+})->onHosts(
+    'test-frontend',
+    'prod-frontend',
+    'test-backend',
+    'prod-backend'
+);
+
+//Sphinx related tasks
+set('bin/indexer', function () {
+    return run('which indexer');
+});
+
+desc('Copy services config examples');
+task('config:services', function() {
+    run('cp {{sphinx_conf_src}} {{sphinx_conf_dest}}');
+})->onHosts('prod-services');
+
+desc('Reindex sphinx');
+task('sphinx:index', function () {
+    run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet --config {{sphinx_conf_dest}}');
+})->onHosts('prod-services');
+
+desc('Infect app configuration with sphinx credentials');
+task('sphinx:inject', function () {
+    run("sed -i -E 's/sql_host[[:blank:]]*=.*/sql_host={{db_app_host}}/g' {{sphinx_config_path}}");
+    run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_name_releasing}}/g' {{sphinx_config_path}}");
+    run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{sphinx_config_path}}");
+    run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{sphinx_config_path}}");
+})->onHosts('prod-frontend');
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -313,6 +337,14 @@ desc('Generate application key');
 task('artisan:key:generate', function () {
     $output = run('cd {{release_path}} && {{bin/php}} artisan key:generate');
     writeln('<info>' . $output . '</info>');
+})->onHosts(
+    'test-frontend',
+    'prod-frontend'
+);
+
+desc('Clear cache table');
+task('artisan:cache:clear_table', function () {
+    run('cd {{release_path}} && {{bin/php}} artisan cachetable:clear --truncate');
 })->onHosts(
     'test-frontend',
     'prod-frontend'
@@ -405,12 +437,32 @@ task('rsync:static', function() {
     'prod-backend'
 );
 
-//Sphinx tasks filter
-task('config:sphinx')->onHosts(
+desc('Purge project folder');
+task('deploy:purge', function() {
+    $hostName = Task\Context::get()->getHost()->getHostname();
+    $message = "You're about to purge $hostName, check options:";
+    $availableChoices = array("Purge host", "Continue without purge");
+    $purgeChoise = askConfirmation($message, $default = false);
+    if($purgeChoise) {
+        if (test('[ -d {{deploy_path}} ]')) {
+            run('sudo -H -u deploy rm {{deploy_path}} -r');
+        } else {
+            writeln("<comment>No such directory {{deploy_path}}</comment>");
+        }
+    }
+    else {
+        writeln("<info>Continue without purging host</info>");
+    }
+})->onHosts(
+    'test-frontend',
     'prod-frontend',
-    'prod-backend'
+    'test-backend',
+    'prod-backend',
+    'test-backend-client',
+    'test-photobank-client',
+    'prod-backend-client',
+    'prod-photobank-client'
 );
-task('sphinx:index')->onHosts('prod-frontend');
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
