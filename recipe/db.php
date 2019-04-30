@@ -4,6 +4,23 @@ namespace Deployer;
 
 use Symfony\Component\Dotenv\Dotenv;
 
+function inflate_db() {
+    if (get('db_name_previous')) {
+        writeln('<info>Trying to inflate database {{db_name_releasing}} with release data from {{db_name_previous}}, please wait..</info>');
+        run('mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
+            ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
+    } elseif (get('db_source_name')) {
+        writeln('<info>Trying to inflate database {{db_name_releasing}} with initial data from {{db_source_name}}, please wait..</info>');
+        run('mysqldump --single-transaction --insert-ignore -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
+            ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
+    } elseif (get('dump_file') && test('[ -r {{dump_file}} ]')) {
+        writeln('<info>Trying to inflate database {{db_name_releasing}} with initial data from {{dump_file}}, please wait..</info>');
+        run('cd {{deploy_path}} && mysql -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}} < {{dump_file}}');
+    } else {
+        writeln('<warning>No source DB found, can`t inflate database, proceed.</warning>');
+    }
+}
+
 set('db_name_releasing', function () {
     return 'mir24_dep_' . get('release_name');
 });
@@ -62,18 +79,7 @@ task('db:create', function () {
 
 desc('Inflate database with data from current released version');
 task('db:pipe', function () {
-    if (get('db_name_previous')) {
-        writeln('<info>Trying to inflate database {{db_name_releasing}} with release data from {{db_name_previous}}</info>');
-        run('mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
-            ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
-    } elseif (get('db_source_name')) {
-        writeln('<info>Trying to inflate database {{db_name_releasing}} with initial data from {{db_source_name}}</info>');
-        run('mysqldump --single-transaction --insert-ignore -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
-            ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
-    } else {
-        writeln('<error>No previous release found, can`t inflate database, stop.</error>');
-        die;
-    }
+    inflate_db();
 });
 
 desc('Inflate database of releasing built with data from source configured. Run standalone.');
@@ -82,19 +88,7 @@ task('db:repipe', function () {
     if($releaseExists){
         $releaseInProgressName = get('releases_list')[0];
         set('release_name', $releaseInProgressName);
-
-        if (get('db_name_previous')) {
-            writeln('<info>Trying to inflate database {{db_name_releasing}} with release data from {{db_name_previous}}</info>');
-            run('mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
-                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
-        } elseif (get('db_source_name')) {
-            writeln('<info>Trying to inflate database {{db_name_releasing}} with initial data from {{db_source_name}}</info>');
-            run('mysqldump --single-transaction --insert-ignore -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
-                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
-        } else {
-            writeln('<error>No previous release found, can`t inflate database, stop.</error>');
-            die;
-        }
+        inflate_db();
     }
     else {
         writeln("<comment>Can't define target DB, no release built found.</comment>");
