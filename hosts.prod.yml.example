@@ -51,7 +51,7 @@ prod-frontend:
     composer_action: install
     writable_mode: chown
     writable_use_sudo: true
-    writable_dirs: [bootstrap/cache, storage]
+    writable_dirs: [bootstrap/cache, storage, public/sitemaps]
     shared_dirs: [storage/logs]
     shared_files: [storage/.htpasswd]
     deploy_path: /var/www/mir24-app/mir24.tv
@@ -82,8 +82,8 @@ prod-frontend:
     dump_file: /home/deploy/mir24_7.sql
     deploy_permissions:
         - 'sudo chown -R deploy:www-data ./'
-        - 'sudo chmod 770 -R ./.git ./bootstrap/cache ./storage'
-        - 'find .  -not -path "./.git" -not -path "./bootstrap/cache" -not -path "./storage" -exec sudo chmod 750 {} \;'
+        - 'sudo chmod 770 -R ./.git ./bootstrap/cache ./public/sitemaps ./storage'
+        - 'find .  -not -path "./.git" -not -path "./bootstrap/cache" -not -path "./public/sitemaps" -not -path "./storage" -not -path "./node_modules" -exec sudo chmod 750 {} \;'
 
 
 prod-backend:
