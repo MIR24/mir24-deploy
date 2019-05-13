@@ -4,8 +4,10 @@ namespace Deployer;
 
 use Symfony\Component\Dotenv\Dotenv;
 
+set('db_source_mode', 'current');
+
 function inflateDb() {
-    $dbSourceMode = get('db_source_mode', 'current');
+    $dbSourceMode = get('db_source_mode');
     switch ($dbSourceMode) {
         case 'current':
             $condition = get('db_name_previous');
@@ -82,6 +84,10 @@ task('db:init', function () {
 
 desc('Create new database to proceed release');
 task('db:create', function () {
+    if (get('db_source_name') === 'none') {
+        writeln('<info>db_source_name set to none. No DB will be created</info>');
+        return;
+    }
     writeln('<info>Trying to create database {{db_name_releasing}}</info>');
     run('mysql -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} -e "CREATE DATABASE {{db_name_releasing}}"');
 });
