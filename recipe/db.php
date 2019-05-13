@@ -4,18 +4,34 @@ namespace Deployer;
 
 use Symfony\Component\Dotenv\Dotenv;
 
-function inflate_db() {
-    if (get('db_name_previous')) {
-        writeln('<info>Trying to inflate database {{db_name_releasing}} with release data from {{db_name_previous}}, please wait..</info>');
-        run('mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
-            ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
-    } elseif (get('db_source_name')) {
-        writeln('<info>Trying to inflate database {{db_name_releasing}} with initial data from {{db_source_name}}, please wait..</info>');
-        run('mysqldump --single-transaction --insert-ignore -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
-            ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}');
-    } elseif (get('dump_file') && test('[ -r {{dump_file}} ]')) {
-        writeln('<info>Trying to inflate database {{db_name_releasing}} with initial data from {{dump_file}}, please wait..</info>');
-        run('cd {{deploy_path}} && mysql -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}} < {{dump_file}}');
+function inflateDb() {
+    $dbSourceMode = get('db_source_mode', 'current');
+    switch ($dbSourceMode) {
+        case 'current':
+            $condition = get('db_name_previous');
+            $message = 'Trying to inflate database {{db_name_releasing}} with release data from {{db_name_previous}}, please wait..';
+            $cmd = 'mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
+                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}';
+            break;
+        case 'source':
+            $condition = get('db_source_name');
+            $message = 'Trying to inflate database {{db_name_releasing}} with initial data from {{db_source_name}}, please wait..';
+            $cmd = 'mysqldump --single-transaction --insert-ignore -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
+                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}';
+            break;
+        case 'file':
+            $condition = get('dump_file') && test('[ -r {{dump_file}} ]');
+            $message = 'Trying to inflate database {{db_name_releasing}} with initial data from {{dump_file}}, please wait..';
+            $cmd = 'cd {{deploy_path}} && mysql -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}} < {{dump_file}}';
+            break;
+        default:
+            writeln('<info>No source DB will be used, proceed.</info>');
+            return;
+    }
+
+    if ($condition) {
+        writeln("<info>$message</info>");
+        run($cmd);
     } else {
         writeln('<warning>No source DB found, can`t inflate database, proceed.</warning>');
     }
@@ -79,7 +95,7 @@ task('db:create', function () {
 
 desc('Inflate database with data from current released version');
 task('db:pipe', function () {
-    inflate_db();
+    inflateDb();
 });
 
 desc('Inflate database of releasing built with data from source configured. Run standalone.');
@@ -88,7 +104,7 @@ task('db:repipe', function () {
     if($releaseExists){
         $releaseInProgressName = get('releases_list')[0];
         set('release_name', $releaseInProgressName);
-        inflate_db();
+        inflateDb();
     }
     else {
         writeln("<comment>Can't define target DB, no release built found.</comment>");
