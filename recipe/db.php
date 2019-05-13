@@ -42,23 +42,16 @@ set('db_name_releasing', function () {
 });
 
 set('db_name_previous', function () {
-    try{
-        $currentReleasePath = get('current_path');
-    } catch(\Deployer\Exception\RuntimeException $e){
-        $currentReleasePath = null;
-    }
-
-    if($currentReleasePath){
+    $releasedDBName = '';
+    if (has('previous_release')) {
         $dotenv = new Dotenv();
-        $releasedDBName = $dotenv->parse(run('cat ' . $currentReleasePath . '/.env'))["DB_DATABASE"];
-        writeln('<info>Released DB found: '.$releasedDBName.'</info>');
-
-        return $releasedDBName;
+        $releasedDBName = $dotenv->parse(run('cat {{previous_release}}/.env'))['DB_DATABASE'];
+        writeln('<info>Released DB found: ' . $releasedDBName . '</info>');
     } else {
-        writeln('<comment>Any released DB not found</comment>');
-
-        return '';
+        writeln('<comment>No released DB found</comment>');
     }
+
+    return $releasedDBName;
 });
 
 //TODO configure database as subrepo
