@@ -233,7 +233,7 @@ task('config:inject', function () {
     $customEnv = get('inject_env', []);
     foreach ($customEnv as $key => $value) {
         $escapedValue = escapeForSed($value);
-        run("sed -i -E 's/$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
+        run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
 })->onHosts(
     'test-frontend',
@@ -247,7 +247,7 @@ task('config:switch', function () {
     $customEnv = get('inject_env_switched', []);
     foreach ($customEnv as $key => $value) {
         $escapedValue = escapeForSed($value);
-        run("sed -i -E 's/$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
+        run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
 })->onHosts(
     'test-frontend',
