@@ -11,20 +11,20 @@ function inflateDb() {
     switch ($dbSourceMode) {
         case 'current':
             $condition = get('db_name_previous');
-            $message = 'Trying to inflate database {{db_name_releasing}} with release data from {{db_name_previous}}, please wait..';
+            $message = 'Trying to inflate database {{db_app_name}} with release data from {{db_name_previous}}, please wait..';
             $cmd = 'mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
-                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}';
+                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}}';
             break;
         case 'source':
             $condition = get('db_source_name');
-            $message = 'Trying to inflate database {{db_name_releasing}} with initial data from {{db_source_name}}, please wait..';
+            $message = 'Trying to inflate database {{db_app_name}} with initial data from {{db_source_name}}, please wait..';
             $cmd = 'mysqldump --single-transaction --insert-ignore -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
-                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}}';
+                ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}}';
             break;
         case 'file':
             $condition = get('dump_file') && test('[ -r {{dump_file}} ]');
-            $message = 'Trying to inflate database {{db_name_releasing}} with initial data from {{dump_file}}, please wait..';
-            $cmd = 'cd {{deploy_path}} && mysql -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_name_releasing}} < {{dump_file}}';
+            $message = 'Trying to inflate database {{db_app_name}} with initial data from {{dump_file}}, please wait..';
+            $cmd = 'cd {{deploy_path}} && mysql -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}} < {{dump_file}}';
             break;
         default:
             writeln('<info>No source DB will be used, proceed.</info>');
@@ -39,7 +39,7 @@ function inflateDb() {
     }
 }
 
-set('db_name_releasing', function () {
+set('db_app_name', function () {
     return 'mir24_dep_' . get('release_name');
 });
 
@@ -68,28 +68,14 @@ task('db:clone', function () {
     run("cd {{release_path}} && {{bin/git}} clone $at git@github.com:MIR24/database.git");
 });
 
-//Executing initial SQL dump
-desc('Executing initial dump may took a minute');
-task('db:init', function () {
-    writeln('<info>Check if {{dump_file}} exists</info>');
-
-    if (test('[ ! -r {{dump_file}} ]')) {
-        writeln('<comment>No dump file found, proceed</comment>');
-
-        return;
-    }
-    writeln('<info>SQL dump execution, please wait..</info>');
-    run('cd {{deploy_path}} && mysql -h{{db_app_host}} -u{{db_app_user}} -p{{db_app_pass}} {{db_app_name}} < {{dump_file}}');
-});
-
 desc('Create new database to proceed release');
 task('db:create', function () {
     if (get('db_source_name') === 'none') {
         writeln('<info>db_source_name set to none. No DB will be created</info>');
         return;
     }
-    writeln('<info>Trying to create database {{db_name_releasing}}</info>');
-    run('mysql -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} -e "CREATE DATABASE {{db_name_releasing}}"');
+    writeln('<info>Trying to create database {{db_app_name}}</info>');
+    run('mysql -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} -e "CREATE DATABASE {{db_app_name}}"');
 });
 
 desc('Inflate database with data from current released version');
