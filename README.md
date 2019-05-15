@@ -31,6 +31,7 @@ $ cp /tmp/mir24_7.sql /home/www/dev7.mir24.tv/
 Command executing SQL runs at `frontend` host, so specify dump filename at `hosts.yml` at `test-frontend` section:
 ```yml
 test-frontend:
+    db_source_mode: file
     dump_file: mir24_7.sql
 ```
 If deploy procedure fails to locate dump file it just proceeds with comment message.
@@ -53,6 +54,14 @@ Built project structure should look like this:<br>
 ![Deploy procedure](https://raw.githubusercontent.com/MIR24/mir24-deploy/master/images/deploy_structure.png "Deploy procedure")
 
 Configure web-server document roots at `/home/www/dev7.mir24.tv/frontend-server/current/public` and `/home/www/dev7.mir24.tv/backend-server/current/public`.
+
+## Working with DB
+
+You can work with deploying app's DB in 4 different scenarios. In order to specify the scenario you should use `db_source_mode` param. Possible values:
+1. `current`: pipe releasing DB from previous release data (_this is default value_)
+2. `source`: pipe releasing DB from source DB (`db_source_name`)
+3. `file`: pipe releasing DB from SQL dump (`dump_file`)
+4. `none` : use releasing DB as is
 
 ## Routine
 

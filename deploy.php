@@ -47,7 +47,6 @@ task('deploy', [
     'deploy:release',
     'db:create',
     'db:pipe',
-    'db:init',
     'deploy:update_code',
     'db:clone',
     'deploy:shared',
@@ -90,7 +89,6 @@ task('release:build', [
     'deploy:release',
     'db:create',
     'db:pipe',
-    'db:init',
     'deploy:update_code',
     'db:clone',
     'deploy:shared',
@@ -199,9 +197,6 @@ task('deploy:permissions', function() {
     'prod-backend'
 );
 
-// Executing initial SQL dump
-task('db:init')->onHosts('test-frontend')->onStage('test');
-
 // Cloning database repository
 //TODO configure database as subrepo
 task('db:clone')->onHosts(
@@ -215,7 +210,10 @@ task('db:clone')->onHosts(
 task('db:create')->onHosts('prod-frontend');
 
 // Inflate database
-task('db:pipe')->onHosts('prod-frontend');
+task('db:pipe')->onHosts(
+    'test-frontend',
+    'prod-frontend'
+);
 
 //TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
@@ -274,7 +272,7 @@ task('sphinx:index', function () {
 desc('Infect app configuration with sphinx credentials');
 task('sphinx:inject', function () {
     run("sed -i -E 's/sql_host[[:blank:]]*=.*/sql_host={{db_app_host}}/g' {{sphinx_config_path}}");
-    run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_name_releasing}}/g' {{sphinx_config_path}}");
+    run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_app_name}}/g' {{sphinx_config_path}}");
     run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{sphinx_config_path}}");
     run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{sphinx_config_path}}");
 })->onHosts('prod-frontend');
