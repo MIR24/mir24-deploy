@@ -45,11 +45,13 @@ set('db_app_name', function () {
 
 set('db_name_previous', function () {
     $releasedDBName = '';
-    if (has('previous_release')) {
+    try{
+        $currentReleasePath = get('current_path');
         $dotenv = new Dotenv();
-        $releasedDBName = $dotenv->parse(run('cat {{previous_release}}/.env'))['DB_DATABASE'];
+        $envConfig = $dotenv->parse(run("cat $currentReleasePath/.env"));
+        $releasedDBName = $envConfig['DB_DATABASE'] ?? '';
         writeln('<info>Released DB found: ' . $releasedDBName . '</info>');
-    } else {
+    } catch(\Deployer\Exception\RuntimeException $e){
         writeln('<comment>No released DB found</comment>');
     }
 
