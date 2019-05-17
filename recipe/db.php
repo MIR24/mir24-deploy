@@ -58,18 +58,6 @@ set('db_name_previous', function () {
     return $releasedDBName;
 });
 
-//TODO configure database as subrepo
-desc('Cloning database repository');
-task('db:clone', function () {
-    $defaultBranch = get('branch');
-    $branch = get('db_clone_branch', $defaultBranch);
-    $at = '';
-    if (!empty($branch)) {
-        $at = "-b $branch";
-    }
-    run("cd {{release_path}} && {{bin/git}} clone $at git@github.com:MIR24/database.git");
-});
-
 desc('Create new database to proceed release');
 task('db:create', function () {
     if (get('db_source_name') === 'none') {

@@ -48,7 +48,6 @@ task('deploy', [
     'db:create',
     'db:pipe',
     'deploy:update_code',
-    'db:clone',
     'deploy:shared',
     'config:clone',
     'config:services',
@@ -90,7 +89,6 @@ task('release:build', [
     'db:create',
     'db:pipe',
     'deploy:update_code',
-    'db:clone',
     'deploy:shared',
     'config:clone',
     'config:services',
@@ -191,15 +189,6 @@ task('deploy:permissions', function() {
         invoke('deploy:writable');
     }
 })->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
-);
-
-// Cloning database repository
-//TODO configure database as subrepo
-task('db:clone')->onHosts(
     'test-frontend',
     'prod-frontend',
     'test-backend',
@@ -464,8 +453,8 @@ task('deploy:purge', function() {
 
 //Filter external recipes
 task('artisan:migrate')->onHosts(
-    'test-frontend',
-    'prod-frontend'
+    'test-backend',
+    'prod-backend'
 );
 task('artisan:storage:link')->onHosts(
     'test-frontend',
