@@ -63,12 +63,7 @@ You can work with deploying app's DB in 4 different scenarios. In order to speci
 3. `file`: pipe releasing DB from SQL dump (`dump_file`)
 4. `none` : use releasing DB as is
 
-## Routine
-
-`$ dep release:build prod` starts two-stage release built procedure.
-After built is finished, apllication could be checked at some specific domain like dev-pre.mir24.tv.
-Folder under `release` symlink must be configured as a webserver docroot.
-After check is done, procedure can be finished with `$ dep release:switch prod`. 
+## Routine 
 
 `$ dep deploy test` builds whole application.
 
@@ -94,6 +89,20 @@ $ dep deploy test
 $ dep deploy test --branch=MIRSCR-42-view-fix --hosts=frontend-server
 ```
 This one takes more time, because frontend-server being deployed twice, - at the default branch within first command than being rebuilt at fix branch.
+
+## Two-stage build
+
+Use `$ dep release:build prod` command to start two-stage build procedure.
+After built is finished, apllication could be checked at some specific domain like dev-pre.mir24.tv.
+Folder under `release` symlink must be configured as a webserver docroot.
+
+After all checks are done, application can be switched by using next commands:
+ ```
+ $ dep db:repipe prod
+ $ dep release:switch prod
+ // Next command is optional
+ $ dep sphinx:index prod
+ ```
 
 ## Tips
 You have to execute `$ dep rsync test` after deploy if `backend-server` was built solo. In this case `rsync` commands infects `backend-server` with `backend-client` and `photobank-client` components.
