@@ -29,6 +29,7 @@
 
 prod-services:
     <<: *dev3-base
+    roles: service-scripts
     repository: git@github.com:MIR24/mir24tv-service-scripts.git
     deploy_path: /var/www/mir24-app/mir24tv-service-scripts
     sphinx_conf_src: "{{release_path}}/sphinxsearch/sphinx.conf"
@@ -47,6 +48,7 @@ prod-services:
 prod-frontend:
     <<: *dev3-base
     <<: *prod-settings
+    roles: frontend-server
     repository: git@github.com:MIR24/frontend-server.git
     composer_action: install
     writable_mode: chown
@@ -89,6 +91,7 @@ prod-frontend:
 prod-backend:
     <<: *dev3-base
     <<: *prod-settings
+    roles: backend-server
     repository: git@github.com:MIR24/backend-server.git
     composer_action: update
     writable_mode: chown
@@ -117,6 +120,7 @@ prod-backend:
 
 prod-backend-client:
     <<: *dev3-base
+    roles: backend-client
     repository: git@github.com:MIR24/backend-client.git
     deploy_path: /var/www/mir24-app/backend-client
     rsync_src: "{{release_path}}/build"
@@ -135,6 +139,7 @@ prod-backend-client:
 
 prod-photobank-client:
     <<: *dev3-base
+    roles: photobank
     repository: git@github.com:MIR24/photobank-searchkit.git
     branch: external-client-dev
     deploy_path: /var/www/mir24-app/photobank-client

@@ -188,31 +188,24 @@ task('deploy:permissions', function() {
     } else {
         invoke('deploy:writable');
     }
-})->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
+})->onRoles(
+    'frontend-server',
+    'backend-server'
 );
 
 // Create new database
-task('db:create')->onHosts('prod-frontend');
+task('db:create')->onStage('test', 'prod')->onRoles('frontend-server');
 
 // Inflate database
-task('db:pipe')->onHosts(
-    'test-frontend',
-    'prod-frontend'
-);
+task('db:pipe')->onRoles('frontend-server');
+task('db:repipe')->onHosts('frontend-server');
 
-//TODO maybe better path procedure for shared dir
 desc('Propagate configuration file');
 task('config:clone', function () {
     run('cp {{env_example_file}} {{release_path}}/.env');
-})->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
+})->onRoles(
+    'frontend-server',
+    'backend-server'
 );
 
 desc('Propagate configuration file');
@@ -222,11 +215,9 @@ task('config:inject', function () {
         $escapedValue = escapeForSed($value);
         run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
-})->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
+})->onRoles(
+    'frontend-server',
+    'backend-server'
 );
 
 desc('Propagate configuration file');
@@ -236,11 +227,9 @@ task('config:switch', function () {
         $escapedValue = escapeForSed($value);
         run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
-})->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
+})->onRoles(
+    'frontend-server',
+    'backend-server'
 );
 
 //Sphinx related tasks
@@ -251,12 +240,12 @@ set('bin/indexer', function () {
 desc('Copy services config examples');
 task('config:services', function() {
     run('cp {{sphinx_conf_src}} {{sphinx_conf_dest}}');
-})->onHosts('prod-services');
+})->onRoles('service-scripts');
 
 desc('Reindex sphinx');
 task('sphinx:index', function () {
     run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet --config {{sphinx_conf_dest}}');
-})->onHosts('prod-services');
+})->onStage('prod')->onRoles('service-scripts');
 
 desc('Infect app configuration with sphinx credentials');
 task('sphinx:inject', function () {
@@ -264,7 +253,7 @@ task('sphinx:inject', function () {
     run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_app_name}}/g' {{sphinx_config_path}}");
     run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{sphinx_config_path}}");
     run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{sphinx_config_path}}");
-})->onHosts('prod-frontend');
+})->onStage('test', 'prod')->onRoles('frontend-server');
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -277,88 +266,65 @@ task('npm:install', function () {
         }
     }
     run('cd {{release_path}} && {{bin/npm}} install', ['timeout' => 1800]);
-})->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend-client',
-    'prod-backend-client',
-    'test-photobank-client',
-    'prod-photobank-client'
+})->onRoles(
+    'frontend-server',
+    'backend-client',
+    'photobank'
 );
 
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
 task('tsd:install', function () {
     run('cd {{release_path}} && {{bin/npm}} run tsd -- install', ['timeout' => 1800]);
-})->onHosts(
-    'test-photobank-client',
-    'prod-photobank-client'
-);
+})->onRoles('photobank');
 
 desc('Build npm packages');
 task('npm:build', function () {
     run('cd {{release_path}} && {{bin/npm}} run build', ['timeout' => 1800]);
-})->onHosts(
-    'test-backend-client',
-    'prod-backend-client',
-    'test-photobank-client',
-    'prod-photobank-client'
+})->onRoles(
+    'backend-client',
+    'photobank'
 );
 
 desc('Build assets');
 task('gulp', function () {
     run('cd {{release_path}} && gulp');
-})->onHosts(
-    'test-frontend',
-    'prod-frontend'
-);
+})->onRoles('frontend-server');
 
 task('gulp:switch', function () {
     run('cd {{release_path}} && gulp switch:new_version');
-})->onHosts(
-    'test-frontend',
-    'prod-frontend'
-);
+})->onRoles('frontend-server');
 
 desc('Generate application key');
 task('artisan:key:generate', function () {
     $output = run('cd {{release_path}} && {{bin/php}} artisan key:generate');
     writeln('<info>' . $output . '</info>');
-})->onHosts(
-    'test-frontend',
-    'prod-frontend'
-);
+})->onRoles('frontend-server');
 
 desc('Clear cache table');
 task('artisan:cache:clear_table', function () {
     run('cd {{release_path}} && {{bin/php}} artisan cachetable:clear --truncate');
-})->onHosts(
-    'test-frontend',
-    'prod-frontend'
-);
+})->onRoles('frontend-server');
 
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
     // Will use simple≤ two steps switch.
     run('cd {{release_path}} && {{bin/symlink}} {{uploaded_path}} public/uploaded'); // Atomic override symlink.
-})->onHosts(
-    'test-frontend',
-    'prod-frontend'
-);
+})->onRoles('frontend-server');
 
 desc('Restart memcached');
 task('memcached:restart', function () {
     if (has('previous_release')) {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:restart');
     }
-})->onHosts('prod-frontend');
+})->onStage('test', 'prod')->onRoles('frontend-server');
 
 desc('Flush memcached');
 task('memcached:flush', function () {
     if (has('previous_release')) {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:flush');
     }
-})->onHosts('prod-frontend');
+})->onStage('test', 'prod')->onRoles('frontend-server');
 
 //Rsync tasks
 
@@ -370,11 +336,9 @@ task('rsync:setup', function () {
         $dest = 'current';
     }
     set('rsync_dest', parse("{{rsync_dest_base}}/{$dest}/{{rsync_dest_relative}}"));
-})->onHosts(
-    'test-backend-client',
-    'prod-backend-client',
-    'test-photobank-client',
-    'prod-photobank-client'
+})->onRoles(
+    'backend-client',
+    'photobank'
 );
 
 desc('Rsync override');
@@ -406,11 +370,9 @@ task('rsync', function() {
     }
 
     run("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
-})->onHosts(
-    'test-backend-client',
-    'test-photobank-client',
-    'prod-backend-client',
-    'prod-photobank-client'
+})->onRoles(
+    'backend-client',
+    'photobank'
 );
 
 task('rsync:static', function() {
@@ -420,87 +382,54 @@ task('rsync:static', function() {
     }
 
     run("sudo rsync -a '{{rsync_src}}/' '{{rsync_dest}}/'");
-})->onHosts(
-    'prod-backend'
-);
+})->onStage('prod')->onRoles('frontend-server');
 
 desc('Purge project folder');
 task('deploy:purge', function() {
     $hostName = Task\Context::get()->getHost()->getHostname();
-    $message = "You're about to purge $hostName, check options:";
-    $availableChoices = array("Purge host", "Continue without purge");
+    $message = "You're about to purge $hostName, are you sure?";
     $purgeChoise = askConfirmation($message, $default = false);
     if($purgeChoise) {
         if (test('[ -d {{deploy_path}} ]')) {
             run('sudo -H -u deploy rm {{deploy_path}} -r');
         } else {
-            writeln("<comment>No such directory {{deploy_path}}</comment>");
+            writeln('<comment>No such directory {{deploy_path}}</comment>');
         }
     }
     else {
-        writeln("<info>Continue without purging host</info>");
+        writeln('<info>Continue without purging host</info>');
     }
-})->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend',
-    'test-backend-client',
-    'test-photobank-client',
-    'prod-backend-client',
-    'prod-photobank-client'
-);
+});
 
 //Filter external recipes
-task('artisan:migrate')->onHosts(
-    'test-backend',
-    'prod-backend'
+task('artisan:migrate')->onRoles('backend-server');
+task('artisan:config:cache')->onRoles('frontend-server');
+task('artisan:optimize')->onRoles('frontend-server');
+task('artisan:storage:link')->onRoles(
+    'frontend-server',
+    'backend-server'
 );
-task('artisan:storage:link')->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
+task('artisan:cache:clear')->onRoles(
+    'frontend-server',
+    'backend-server'
 );
-task('artisan:cache:clear')->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
+task('deploy:vendors')->onRoles(
+    'frontend-server',
+    'backend-server'
 );
-task('artisan:config:cache')->onHosts(
-    'test-frontend',
-    'prod-frontend'
+task('deploy:shared')->onRoles(
+    'frontend-server',
+    'backend-server'
 );
-task('artisan:optimize')->onHosts(
-    'test-frontend',
-    'prod-frontend'
+task('deploy:writable')->onRoles(
+    'frontend-server',
+    'backend-server'
 );
-task('deploy:vendors')->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
+task('deploy:copy_dirs')->onRoles(
+    'frontend-server',
+    'backend-server'
 );
-task('deploy:shared')->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
-);
-task('deploy:writable')->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
-);
-task('deploy:copy_dirs')->onHosts(
-    'test-frontend',
-    'prod-frontend',
-    'test-backend',
-    'prod-backend'
-);
-task('deploy:clear_paths')->onHosts(
-    'prod-frontend',
-    'prod-backend'
+task('deploy:clear_paths')->onRoles(
+    'frontend-server',
+    'backend-server'
 );

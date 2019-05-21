@@ -84,4 +84,4 @@ task('db:repipe', function () {
     else {
         writeln("<comment>Can't define target DB, no release built found.</comment>");
     }
-})->onHosts('prod-frontend');
+});
