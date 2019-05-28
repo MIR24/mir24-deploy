@@ -382,7 +382,7 @@ task('rsync:static', function() {
     }
 
     run("sudo rsync -a '{{rsync_src}}/' '{{rsync_dest}}/'");
-})->onStage('prod')->onRoles('frontend-server');
+})->onStage('prod')->onRoles('backend-server');
 
 desc('Purge project folder');
 task('deploy:purge', function() {
