@@ -85,6 +85,7 @@ task('deploy', [
     'success',
 ]);
 
+before('deploy', 'artisan:down');
 after('deploy', 'sphinx:index');
 
 desc('Build release');
@@ -121,6 +122,8 @@ task('release:build', [
     'deploy:clear_paths',
     'deploy:unlock'
 ]);
+
+before('db:repipe', 'artisan:down');
 
 desc('Switch to release built');
 task('release:switch', [
@@ -334,6 +337,10 @@ task('memcached:flush', function () {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:flush');
     }
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
+
+// Application maintenance mode tasks
+task('artisan:down')->onStage('prod')->onHosts('prod-backend');
+task('artisan:up')->onStage('prod')->onHosts('prod-backend');
 
 //Rsync tasks
 
