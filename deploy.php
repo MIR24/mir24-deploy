@@ -71,6 +71,7 @@ task('deploy', [
     'rsync',
     'artisan:storage:link',
     'artisan:cache:clear',
+    'artisan:cache:clear_table',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
@@ -129,6 +130,8 @@ desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
     'config:switch',
+    'artisan:migrate',
+    'artisan:cache:clear_table',
     'artisan:config:cache',
     'deploy:symlink',
     'memcached:restart',
