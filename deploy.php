@@ -1,10 +1,17 @@
 <?php
+
 namespace Deployer;
 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/recipe/laravel.php';
 require __DIR__ . '/recipe/db.php';
 require 'recipe/rsync.php';
+
+const ROLE_SS = 'service-scripts';
+const ROLE_FS = 'frontend-server';
+const ROLE_BS = 'backend-server';
+const ROLE_BC = 'backend-client';
+const ROLE_PB = 'photobank-client';
 
 $releaseDate = date('d_M_H_i');
 
@@ -189,23 +196,23 @@ task('deploy:permissions', function() {
         invoke('deploy:writable');
     }
 })->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 
 // Create new database
-task('db:create')->onStage('test', 'prod')->onRoles('frontend-server');
+task('db:create')->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Inflate database
-task('db:pipe')->onRoles('frontend-server');
-task('db:repipe')->onHosts('frontend-server');
+task('db:pipe')->onRoles(ROLE_FS);
+task('db:repipe')->onHosts(ROLE_FS);
 
 desc('Propagate configuration file');
 task('config:clone', function () {
     run('cp {{env_example_file}} {{release_path}}/.env');
 })->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 
 desc('Propagate configuration file');
@@ -216,8 +223,8 @@ task('config:inject', function () {
         run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
 })->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 
 desc('Propagate configuration file');
@@ -228,8 +235,8 @@ task('config:switch', function () {
         run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
     }
 })->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 
 //Sphinx related tasks
@@ -240,12 +247,12 @@ set('bin/indexer', function () {
 desc('Copy services config examples');
 task('config:services', function() {
     run('cp {{sphinx_conf_src}} {{sphinx_conf_dest}}');
-})->onRoles('service-scripts');
+})->onRoles(ROLE_SS);
 
 desc('Reindex sphinx');
 task('sphinx:index', function () {
     run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet --config {{sphinx_conf_dest}}');
-})->onStage('prod')->onRoles('service-scripts');
+})->onStage('prod')->onRoles(ROLE_SS);
 
 desc('Infect app configuration with sphinx credentials');
 task('sphinx:inject', function () {
@@ -253,7 +260,7 @@ task('sphinx:inject', function () {
     run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_app_name}}/g' {{sphinx_config_path}}");
     run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{sphinx_config_path}}");
     run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{sphinx_config_path}}");
-})->onStage('test', 'prod')->onRoles('frontend-server');
+})->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Did not include npm recipe because of low timeout and poor messaging
 desc('Install npm packages');
@@ -267,64 +274,64 @@ task('npm:install', function () {
     }
     run('cd {{release_path}} && {{bin/npm}} install', ['timeout' => 1800]);
 })->onRoles(
-    'frontend-server',
-    'backend-client',
-    'photobank-client'
+    ROLE_FS,
+    ROLE_BC,
+    ROLE_PB
 );
 
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
 task('tsd:install', function () {
     run('cd {{release_path}} && {{bin/npm}} run tsd -- install', ['timeout' => 1800]);
-})->onRoles('photobank-client');
+})->onRoles(ROLE_PB);
 
 desc('Build npm packages');
 task('npm:build', function () {
     run('cd {{release_path}} && {{bin/npm}} run build', ['timeout' => 1800]);
 })->onRoles(
-    'backend-client',
-    'photobank-client'
+    ROLE_BC,
+    ROLE_PB
 );
 
 desc('Build assets');
 task('gulp', function () {
     run('cd {{release_path}} && gulp');
-})->onRoles('frontend-server');
+})->onRoles(ROLE_FS);
 
 task('gulp:switch', function () {
     run('cd {{release_path}} && gulp switch:new_version');
-})->onRoles('frontend-server');
+})->onRoles(ROLE_FS);
 
 desc('Generate application key');
 task('artisan:key:generate', function () {
     $output = run('cd {{release_path}} && {{bin/php}} artisan key:generate');
     writeln('<info>' . $output . '</info>');
-})->onRoles('frontend-server');
+})->onRoles(ROLE_FS);
 
 desc('Clear cache table');
 task('artisan:cache:clear_table', function () {
     run('cd {{release_path}} && {{bin/php}} artisan cachetable:clear --truncate');
-})->onRoles('frontend-server');
+})->onRoles(ROLE_FS);
 
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
     // Will use simple≤ two steps switch.
     run('cd {{release_path}} && {{bin/symlink}} {{uploaded_path}} public/uploaded'); // Atomic override symlink.
-})->onRoles('frontend-server');
+})->onRoles(ROLE_FS);
 
 desc('Restart memcached');
 task('memcached:restart', function () {
     if (has('previous_release')) {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:restart');
     }
-})->onStage('test', 'prod')->onRoles('frontend-server');
+})->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 desc('Flush memcached');
 task('memcached:flush', function () {
     if (has('previous_release')) {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:flush');
     }
-})->onStage('test', 'prod')->onRoles('frontend-server');
+})->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 //Rsync tasks
 
@@ -337,8 +344,8 @@ task('rsync:setup', function () {
     }
     set('rsync_dest', parse("{{rsync_dest_base}}/{$dest}/{{rsync_dest_relative}}"));
 })->onRoles(
-    'backend-client',
-    'photobank-client'
+    ROLE_BC,
+    ROLE_PB
 );
 
 desc('Rsync override');
@@ -371,8 +378,8 @@ task('rsync', function() {
 
     run("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
 })->onRoles(
-    'backend-client',
-    'photobank-client'
+    ROLE_BC,
+    ROLE_PB
 );
 
 task('rsync:static', function() {
@@ -382,7 +389,7 @@ task('rsync:static', function() {
     }
 
     run("sudo rsync -a '{{rsync_src}}/' '{{rsync_dest}}/'");
-})->onStage('prod')->onRoles('backend-server');
+})->onStage('prod')->onRoles(ROLE_BS);
 
 desc('Purge project folder');
 task('deploy:purge', function() {
@@ -402,34 +409,34 @@ task('deploy:purge', function() {
 });
 
 //Filter external recipes
-task('artisan:migrate')->onRoles('backend-server');
-task('artisan:config:cache')->onRoles('frontend-server');
-task('artisan:optimize')->onRoles('frontend-server');
+task('artisan:migrate')->onRoles(ROLE_BS);
+task('artisan:config:cache')->onRoles(ROLE_FS);
+task('artisan:optimize')->onRoles(ROLE_FS);
 task('artisan:storage:link')->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 task('artisan:cache:clear')->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 task('deploy:vendors')->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 task('deploy:shared')->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 task('deploy:writable')->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 task('deploy:copy_dirs')->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
 task('deploy:clear_paths')->onRoles(
-    'frontend-server',
-    'backend-server'
+    ROLE_FS,
+    ROLE_BS
 );
