@@ -269,21 +269,21 @@ task('npm:install', function () {
 })->onRoles(
     'frontend-server',
     'backend-client',
-    'photobank'
+    'photobank-client'
 );
 
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
 task('tsd:install', function () {
     run('cd {{release_path}} && {{bin/npm}} run tsd -- install', ['timeout' => 1800]);
-})->onRoles('photobank');
+})->onRoles('photobank-client');
 
 desc('Build npm packages');
 task('npm:build', function () {
     run('cd {{release_path}} && {{bin/npm}} run build', ['timeout' => 1800]);
 })->onRoles(
     'backend-client',
-    'photobank'
+    'photobank-client'
 );
 
 desc('Build assets');
@@ -338,7 +338,7 @@ task('rsync:setup', function () {
     set('rsync_dest', parse("{{rsync_dest_base}}/{$dest}/{{rsync_dest_relative}}"));
 })->onRoles(
     'backend-client',
-    'photobank'
+    'photobank-client'
 );
 
 desc('Rsync override');
@@ -372,7 +372,7 @@ task('rsync', function() {
     run("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
 })->onRoles(
     'backend-client',
-    'photobank'
+    'photobank-client'
 );
 
 task('rsync:static', function() {
