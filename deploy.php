@@ -342,7 +342,9 @@ task('rsync:setup', function () {
         writeln('<comment>Looks like BC component is built lonely</comment>');
         $dest = 'current';
     }
-    set('rsync_dest', parse("{{rsync_dest_base}}/{$dest}/{{rsync_dest_relative}}"));
+    $basePath = get('rsync_dest_base');
+    $relativePath = get('rsync_dest_relative');
+    set('rsync_dest', parse("$basePath/{$dest}/$relativePath"));
 })->onRoles(
     ROLE_BC,
     ROLE_PB
