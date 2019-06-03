@@ -59,6 +59,7 @@ task('deploy', [
     'config:clone',
     'config:services',
     'config:inject',
+    'config:switch',
     'sphinx:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
