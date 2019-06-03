@@ -248,7 +248,11 @@ set('bin/indexer', function () {
 
 desc('Copy services config examples');
 task('config:services', function() {
-    run('cp {{sphinx_conf_src}} {{sphinx_conf_dest}}');
+    $mountFiles = get('mount_files', []);
+    foreach ($mountFiles as $mountFile) {
+        [$src, $dest] = explode(':', $mountFile);
+        run("cp $src $dest");
+    }
 })->onRoles(ROLE_SS);
 
 desc('Reindex sphinx');
