@@ -256,10 +256,12 @@ task('sphinx:index', function () {
 
 desc('Infect app configuration with sphinx credentials');
 task('sphinx:inject', function () {
-    run("sed -i -E 's/sql_host[[:blank:]]*=.*/sql_host={{db_app_host}}/g' {{sphinx_config_path}}");
-    run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_app_name}}/g' {{sphinx_config_path}}");
-    run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{sphinx_config_path}}");
-    run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{sphinx_config_path}}");
+    on(roles(ROLE_SS), function() {
+        run("sed -i -E 's/sql_host[[:blank:]]*=.*/sql_host={{db_app_host}}/g' {{sphinx_conf_dest}}");
+        run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_app_name}}/g' {{sphinx_conf_dest}}");
+        run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{sphinx_conf_dest}}");
+        run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{sphinx_conf_dest}}");
+    });
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Did not include npm recipe because of low timeout and poor messaging
