@@ -260,6 +260,16 @@ task('sphinx:index', function () {
     run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet --config {{sphinx_conf_dest}}');
 })->onStage('prod')->onRoles(ROLE_SS);
 
+desc('Configure supervisor');
+task('supervisor:configure', function () {
+    $supervisorParams = get('supervisor_params', []);
+    foreach ($supervisorParams as $param => $value) {
+        $key = '{' . $param . '}';
+        $escapedValue = escapeForSed($value);
+        run("sed -i -E 's/$key/$escapedValue/g' {{supervisor_conf_dest}}");
+    }
+})->onHosts('prod-services');
+
 desc('Infect app configuration with sphinx credentials');
 task('sphinx:inject', function () {
     on(roles(ROLE_SS), function() {
