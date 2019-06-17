@@ -30,6 +30,7 @@
 
 prod-services:
     <<: *dev3-base
+    <<: *prod-settings
     roles: [service-scripts]
     repository: git@github.com:MIR24/mir24tv-service-scripts.git
     deploy_path: "{{app_base_path}}/mir24tv-service-scripts"
