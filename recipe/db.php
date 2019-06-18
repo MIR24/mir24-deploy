@@ -60,7 +60,7 @@ set('db_name_previous', function () {
 
 desc('Create new database to proceed release');
 task('db:create', function () {
-    if (get('db_source_name') === 'none') {
+    if (get('db_source_mode') === 'none') {
         writeln('<info>db_source_name set to none. No DB will be created</info>');
         return;
     }
@@ -84,4 +84,4 @@ task('db:repipe', function () {
     else {
         writeln("<comment>Can't define target DB, no release built found.</comment>");
     }
-})->onHosts('prod-frontend');
+});

@@ -1,5 +1,6 @@
 .dev3-base: &dev3-base
     hostname: deploy@195.128.157.246
+    app_base_path: /var/www/mir24-app
     stage: dev3
     keep_releases: 2
     http_user: www-data
@@ -29,8 +30,10 @@
 
 prod-services:
     <<: *dev3-base
+    <<: *prod-settings
+    roles: [service-scripts]
     repository: git@github.com:MIR24/mir24tv-service-scripts.git
-    deploy_path: /var/www/mir24-app/mir24tv-service-scripts
+    deploy_path: "{{app_base_path}}/mir24tv-service-scripts"
     sphinx_conf_src: "{{release_path}}/sphinxsearch/sphinx.conf"
     sphinx_conf_dest: "{{release_path}}/build/sphinx.conf"
     rsync:
@@ -47,6 +50,7 @@ prod-services:
 prod-frontend:
     <<: *dev3-base
     <<: *prod-settings
+    roles: [frontend-server]
     repository: git@github.com:MIR24/frontend-server.git
     composer_action: install
     writable_mode: chown
@@ -54,8 +58,8 @@ prod-frontend:
     writable_dirs: [bootstrap/cache, storage, public/sitemaps]
     shared_dirs: [storage/logs]
     shared_files: [storage/.htpasswd]
-    deploy_path: /var/www/mir24-app/mir24.tv
-    uploaded_path: /var/www/mir24-app/editors.mir24.tv/shared/public/uploaded
+    deploy_path: "{{app_base_path}}/mir24.tv"
+    uploaded_path: "{{app_base_path}}/editors.mir24.tv/shared/public/uploaded"
     clear_paths:
         - .env.example
         - phpunit.xml
@@ -78,7 +82,6 @@ prod-frontend:
     db_source_pass: admin_pass
     db_dep_user: deploy_user
     db_dep_pass: deploy_pass
-    sphinx_config_path: /var/www/mir24-app/mir24tv-service-scripts/release/build/sphinx.conf
     dump_file: /home/deploy/mir24_7.sql
     deploy_permissions:
         - 'sudo chown -R deploy:www-data ./'
@@ -89,6 +92,7 @@ prod-frontend:
 prod-backend:
     <<: *dev3-base
     <<: *prod-settings
+    roles: [backend-server]
     repository: git@github.com:MIR24/backend-server.git
     composer_action: update
     writable_mode: chown
@@ -96,10 +100,10 @@ prod-backend:
     writable_dirs: [public/uploaded, storage]
     shared_dirs: [public/uploaded, storage/logs]
     shared_files: []
-    deploy_path: /var/www/mir24-app/editors.mir24.tv
+    deploy_path: "{{app_base_path}}/editors.mir24.tv"
     rsync_marker: /home/rsync-dev/mount-marker
     rsync_src: /home/rsync-dev
-    rsync_dest: /var/www/mir24-app/editors.mir24.tv/shared/public/uploaded
+    rsync_dest: "{{app_base_path}}/editors.mir24.tv/shared/public/uploaded"
     rsync:
         options: []
         flags: rzuEa
@@ -117,10 +121,11 @@ prod-backend:
 
 prod-backend-client:
     <<: *dev3-base
+    roles: [backend-client]
     repository: git@github.com:MIR24/backend-client.git
-    deploy_path: /var/www/mir24-app/backend-client
+    deploy_path: "{{app_base_path}}/backend-client"
     rsync_src: "{{release_path}}/build"
-    rsync_dest_base: /var/www/mir24-app/editors.mir24.tv
+    rsync_dest_base: "{{app_base_path}}/editors.mir24.tv"
     rsync_dest_relative: public
     rsync:
         options: []
@@ -135,11 +140,12 @@ prod-backend-client:
 
 prod-photobank-client:
     <<: *dev3-base
+    roles: [photobank-client]
     repository: git@github.com:MIR24/photobank-searchkit.git
     branch: external-client-dev
-    deploy_path: /var/www/mir24-app/photobank-client
+    deploy_path: "{{app_base_path}}/photobank-client"
     rsync_src: "{{release_path}}/dist"
-    rsync_dest_base: /var/www/mir24-app/editors.mir24.tv
+    rsync_dest_base: "{{app_base_path}}/editors.mir24.tv"
     rsync_dest_relative: public/ftb
     rsync:
         options: []
