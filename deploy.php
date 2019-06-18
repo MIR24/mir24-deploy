@@ -343,8 +343,8 @@ task('memcached:flush', function () {
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Application maintenance mode tasks
-task('artisan:down')->onStage('prod')->onHosts('prod-backend');
-task('artisan:up')->onStage('prod')->onHosts('prod-backend');
+task('artisan:down')->onStage('prod')->onRoles(ROLE_BS);
+task('artisan:up')->onStage('prod')->onRoles(ROLE_BS);
 
 //Rsync tasks
 
