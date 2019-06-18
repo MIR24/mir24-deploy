@@ -205,7 +205,7 @@ task('db:create')->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Inflate database
 task('db:pipe')->onRoles(ROLE_FS);
-task('db:repipe')->onHosts(ROLE_FS);
+task('db:repipe')->onRoles(ROLE_FS);
 
 desc('Propagate configuration file');
 task('config:clone', function () {
