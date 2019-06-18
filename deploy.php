@@ -268,7 +268,7 @@ task('supervisor:configure', function () {
         $escapedValue = escapeForSed($value);
         run("sed -i -E 's/$key/$escapedValue/g' {{supervisor_conf_dest}}");
     }
-})->onHosts('prod-services');
+})->onRoles(ROLE_SS);
 
 desc('Infect app configuration with sphinx credentials');
 task('sphinx:inject', function () {
