@@ -127,6 +127,7 @@ task('release:switch', [
     'deploy:lock',
     'config:switch',
     'artisan:config:cache',
+    'artisan:migrate',
     'deploy:symlink',
     'memcached:restart',
     'deploy:unlock',
