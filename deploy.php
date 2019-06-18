@@ -131,9 +131,9 @@ desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
     'config:switch',
+    'artisan:config:cache',
     'artisan:migrate',
     'artisan:cache:clear_table',
-    'artisan:config:cache',
     'deploy:symlink',
     'memcached:restart',
     'deploy:unlock',
