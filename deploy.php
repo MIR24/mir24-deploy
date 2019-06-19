@@ -87,9 +87,6 @@ task('deploy', [
     'success',
 ]);
 
-before('deploy', 'artisan:down');
-after('deploy', 'sphinx:index');
-
 desc('Build release');
 task('release:build', [
     'deploy:info',
@@ -124,8 +121,6 @@ task('release:build', [
     'deploy:clear_paths',
     'deploy:unlock'
 ]);
-
-before('db:repipe', 'artisan:down');
 
 desc('Switch to release built');
 task('release:switch', [
@@ -171,6 +166,12 @@ task('hotfix', [
     'cleanup',
     'success',
 ]);
+
+/* Before and after task filters */
+before('deploy', 'artisan:down');
+before('db:repipe', 'artisan:down');
+after('deploy:failed', 'artisan:up');
+after('deploy', 'sphinx:index');
 
 desc('Pull the code from repo');
 task('pull_code', function () {
@@ -343,8 +344,8 @@ task('memcached:flush', function () {
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Application maintenance mode tasks
-task('artisan:down')->onStage('prod')->onRoles(ROLE_BS);
-task('artisan:up')->onStage('prod')->onRoles(ROLE_BS);
+task('artisan:down')->onStage('test', 'prod')->onRoles(ROLE_BS);
+task('artisan:up')->onStage('test', 'prod')->onRoles(ROLE_BS);
 
 //Rsync tasks
 
