@@ -56,7 +56,7 @@ prod-frontend:
     writable_mode: chown
     writable_use_sudo: true
     writable_dirs: [bootstrap/cache, storage, public/sitemaps]
-    shared_dirs: [storage/logs]
+    shared_dirs: [storage/logs, storage/framework/sessions]
     shared_files: [storage/.htpasswd]
     deploy_path: "{{app_base_path}}/mir24.tv"
     uploaded_path: "{{app_base_path}}/editors.mir24.tv/shared/public/uploaded"
@@ -98,7 +98,7 @@ prod-backend:
     writable_mode: chown
     writable_use_sudo: true
     writable_dirs: [public/uploaded, storage]
-    shared_dirs: [public/uploaded, storage/logs]
+    shared_dirs: [public/uploaded, storage/logs, storage/framework/sessions]
     shared_files: []
     deploy_path: "{{app_base_path}}/editors.mir24.tv"
     rsync_marker: /home/rsync-dev/mount-marker
