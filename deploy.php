@@ -59,6 +59,7 @@ task('deploy', [
     'config:clone',
     'config:services',
     'config:inject',
+    'config:switch',
     'sphinx:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
@@ -69,6 +70,7 @@ task('deploy', [
     'rsync',
     'artisan:storage:link',
     'artisan:cache:clear',
+    'artisan:cache:clear_table',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
@@ -82,8 +84,6 @@ task('deploy', [
     'cleanup',
     'success',
 ]);
-
-after('deploy', 'sphinx:index');
 
 desc('Build release');
 task('release:build', [
@@ -124,6 +124,7 @@ task('release:switch', [
     'config:switch',
     'artisan:config:cache',
     'artisan:migrate',
+    'artisan:cache:clear_table',
     'deploy:symlink',
     'memcached:restart',
     'deploy:unlock',
@@ -159,6 +160,12 @@ task('hotfix', [
     'cleanup',
     'success',
 ]);
+
+/* Before and after task filters */
+before('deploy', 'artisan:down');
+before('db:repipe', 'artisan:down');
+after('deploy:failed', 'artisan:up');
+after('deploy', 'sphinx:index');
 
 desc('Pull the code from repo');
 task('pull_code', function () {
@@ -321,6 +328,10 @@ task('memcached:flush', function () {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:flush');
     }
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
+
+// Application maintenance mode tasks
+task('artisan:down')->onStage('test', 'prod')->onRoles(ROLE_BS);
+task('artisan:up')->onStage('test', 'prod')->onRoles(ROLE_BS);
 
 //Rsync tasks
 
