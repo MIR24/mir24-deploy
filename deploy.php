@@ -66,8 +66,6 @@ task('deploy', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'gulp',
-    'gulp:switch',
     'rsync:setup',
     'rsync',
     'artisan:storage:link',
@@ -106,8 +104,6 @@ task('release:build', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'gulp',
-    'gulp:switch',
     'rsync:setup',
     'rsync',
     'artisan:storage:link',
@@ -148,8 +144,6 @@ task('hotfix', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'gulp',
-    'gulp:switch',
     'rsync:setup',
     'rsync',
     'artisan:storage:link',
@@ -213,7 +207,7 @@ task('db:create')->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Inflate database
 task('db:pipe')->onRoles(ROLE_FS);
-task('db:repipe')->onHosts(ROLE_FS);
+task('db:repipe')->onRoles(ROLE_FS);
 
 desc('Propagate configuration file');
 task('config:clone', function () {
@@ -299,18 +293,10 @@ desc('Build npm packages');
 task('npm:build', function () {
     run('cd {{release_path}} && {{bin/npm}} run build', ['timeout' => 1800]);
 })->onRoles(
+    ROLE_FS,
     ROLE_BC,
     ROLE_PB
 );
-
-desc('Build assets');
-task('gulp', function () {
-    run('cd {{release_path}} && gulp');
-})->onRoles(ROLE_FS);
-
-task('gulp:switch', function () {
-    run('cd {{release_path}} && gulp switch:new_version');
-})->onRoles(ROLE_FS);
 
 desc('Generate application key');
 task('artisan:key:generate', function () {
