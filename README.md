@@ -31,6 +31,7 @@ $ cp /tmp/mir24_7.sql /home/www/dev7.mir24.tv/
 Command executing SQL runs at `frontend` host, so specify dump filename at `hosts.yml` at `test-frontend` section:
 ```yml
 test-frontend:
+    db_source_mode: file
     dump_file: mir24_7.sql
 ```
 If deploy procedure fails to locate dump file it just proceeds with comment message.
@@ -54,7 +55,15 @@ Built project structure should look like this:<br>
 
 Configure web-server document roots at `/home/www/dev7.mir24.tv/frontend-server/current/public` and `/home/www/dev7.mir24.tv/backend-server/current/public`.
 
-## Routine
+## Working with DB
+
+You can work with deploying app's DB in 4 different scenarios. In order to specify the scenario you should use `db_source_mode` param. Possible values:
+1. `current`: pipe releasing DB from previous release data (_this is default value_)
+2. `source`: pipe releasing DB from source DB (`db_source_name`)
+3. `file`: pipe releasing DB from SQL dump (`dump_file`)
+4. `none` : use releasing DB as is
+
+## Routine 
 
 `$ dep deploy test` builds whole application.
 
@@ -81,6 +90,20 @@ $ dep deploy test --branch=MIRSCR-42-view-fix --hosts=frontend-server
 ```
 This one takes more time, because frontend-server being deployed twice, - at the default branch within first command than being rebuilt at fix branch.
 
+## Two-stage build
+
+Use `$ dep release:build prod` command to start two-stage build procedure.
+After built is finished, apllication could be checked at some specific domain like dev-pre.mir24.tv.
+Folder under `release` symlink must be configured as a webserver docroot.
+
+After all checks are done, application can be switched by using next commands:
+ ```
+ $ dep db:repipe prod
+ $ dep release:switch prod
+ // Next command is optional
+ $ dep sphinx:index prod
+ ```
+
 ## Tips
 You have to execute `$ dep rsync test` after deploy if `backend-server` was built solo. In this case `rsync` commands infects `backend-server` with `backend-client` and `photobank-client` components.
 ________
@@ -106,6 +129,11 @@ Run `dep config:current` to get current releases list.
 ________
 
 Use `dep config:current` to get current release name.
+
+________
+
+You can use custom commands instead of default "deploy:writable" to setup correct dir permissions. 
+To do that simply add "deploy_permissions" section to host (example for `prod-frontend` host can be found at hosts.yml);
 
 ## TODO
 Deployer default procedure clones repo each time into the new `release/*` folder. 

@@ -1,10 +1,9 @@
 .dev3-base: &dev3-base
-    hostname: deploy@dev3.mir24.tv
+    hostname: deploy@195.128.157.246
     app_base_path: /var/www/mir24-app
-    stage: prod
-    keep_releases: 5
+    stage: dev3
+    keep_releases: 2
     http_user: www-data
-    cleanup_use_sudo: true
     forwardAgent: true
     multiplexing: true
     sshOptions:
@@ -12,56 +11,22 @@
 
 .prod-settings: &prod-settings
     db_app_host: 192.168.227.23
-    db_app_user: mir24_admin
-    db_app_pass: password
+    db_app_user: admin_user
+    db_app_pass: admin_pass
     env_example_file: "{{release_path}}/.env.example"
     inject_env:
-        APP_KEY: base64:key
         DB_HOST: "{{db_app_host}}"
         DB_DATABASE: "{{db_app_name}}"
         DB_USERNAME: "{{db_app_user}}"
         DB_PASSWORD: "{{db_app_pass}}"
-        SPHINX_HOST: '127.0.0.1'
+        SPHINX_HOST: 127.0.0.1
         SPHINX_PORT: 9312
         SPHINX_PREFIX: mir24_
         CACHE_ENABLED: 'false'
         CDN_IMAGES_URL: '""'
-        MAIL_DRIVER: 'smtp'
-        MAIL_HOST: 'mail.mirtv.ru'
-        MAIL_PORT: 25
-        MAIL_USERNAME: 'support@mir24.tv'
-        MAIL_PASSWORD: 'password'
-        MAIL_ENCRYPTION: 'null'
-        CACHE_WARMMARKER: 'hot'
-        NOCAPTCHA_SECRET: 'secret'
-        NOCAPTCHA_SITEKEY: 'key'
-        VIDEO_VAST_TAG: '//moevideo.biz/vast?ref=mir24.tv&impressionAfterPaid=1&referrer=https%3A%2F%2Fmir24.tv'
-        CACHE_DRIVER: 'memcached'
-        QUEUE_DRIVER: 'database'
-        PRIVATE_KEY: 'key'
-        PUBLIC_KEY: 'key'
-        GCM_SERVER_KEY: 'key'
-        SUBJECT: 'mir24.tv'
-        FACEBOOK_ENABLED: 'false'
-        FACEBOOK_APP_ID: 'appid'
-        FACEBOOK_APP_SECRET: 'secret'
-        FACEBOOK_GRAPH_VERSION: 'v2.10'
-        FACEBOOK_PERMANENT_ACCESS_TOKEN: 'token'
-        FACEBOOK_PAGE_ID: 'pageid'
-        TWITTER_ENABLED: 'true'
-        TWITTER_CONSUMER_KEY: 'key'
-        TWITTER_CONSUMER_SECRET: 'secret'
-        TWITTER_ACCESS_TOKEN: 'token'
-        TWITTER_ACCESS_TOKEN_SECRET: 'secret'
-        VK_API_VERSION: '5.5'
-        VK_APP_TOKEN: 'token'
-        VK_OWNER_ID: 'ownerid'
-        FRONT_ROUTE: 'https://dev-release.mir24.tv'
     inject_env_switched:
         CACHE_ENABLED: 'true'
-        CDN_IMAGES_URL: 'https://imgtest.mir24.tv'
-        FRONT_ROUTE: 'https://mir24.tv'
-
+        CDN_IMAGES_URL: '""'
 
 prod-services:
     <<: *dev3-base
@@ -91,7 +56,7 @@ prod-frontend:
     writable_mode: chown
     writable_use_sudo: true
     writable_dirs: [bootstrap/cache, storage, public/sitemaps]
-    shared_dirs: [storage/framework/sessions]
+    shared_dirs: [storage/logs, storage/framework/sessions]
     shared_files: [storage/.htpasswd]
     deploy_path: "{{app_base_path}}/mir24.tv"
     uploaded_path: "{{app_base_path}}/editors.mir24.tv/shared/public/uploaded"
@@ -111,17 +76,18 @@ prod-frontend:
         filter: []
         filter-file:
         filter-perdir:
-    db_source_host: 192.168.227.31
-    db_source_name: mir24_dep_26_Mar_14_19
-    db_source_user: db_source_user
-    db_source_pass: db_source_pass
-    db_dep_user: deploy
-    db_dep_pass: deploy_user_pass
+    db_source_host: 192.168.227.23
+    db_source_name: mir24_n1
+    db_source_user: admin_user
+    db_source_pass: admin_pass
+    db_dep_user: deploy_user
+    db_dep_pass: deploy_pass
     dump_file: /home/deploy/mir24_7.sql
-#    deploy_permissions:
-#        - 'sudo chown -R deploy:www-data ./'
-#        - 'sudo chmod 770 -R ./.git ./bootstrap/cache ./public/uploaded ./public/sitemaps ./storage'
-#        - 'find .  -not -path "./.git" -not -path "./bootstrap/cache" -not -path "./public/uploaded" -not -path "./public/sitemaps" -not -path "./storage" -not -path "./node_modules" -exec sudo chmod 750 {} \;'
+    deploy_permissions:
+        - 'sudo chown -R deploy:www-data ./'
+        - 'sudo chmod 770 -R ./.git ./bootstrap/cache ./public/sitemaps ./storage'
+        - 'find .  -not -path "./.git" -not -path "./bootstrap/cache" -not -path "./public/sitemaps" -not -path "./storage" -not -path "./node_modules" -exec sudo chmod 750 {} \;'
+
 
 prod-backend:
     <<: *dev3-base
@@ -132,11 +98,11 @@ prod-backend:
     writable_mode: chown
     writable_use_sudo: true
     writable_dirs: [public/uploaded, storage]
-    shared_dirs: [public/uploaded, storage/framework/sessions]
+    shared_dirs: [public/uploaded, storage/logs, storage/framework/sessions]
     shared_files: []
     deploy_path: "{{app_base_path}}/editors.mir24.tv"
     rsync_marker: /home/rsync-dev/mount-marker
-    rsync_src: /home/rsync-dev1
+    rsync_src: /home/rsync-dev
     rsync_dest: "{{app_base_path}}/editors.mir24.tv/shared/public/uploaded"
     rsync:
         options: []
@@ -148,10 +114,10 @@ prod-backend:
         filter: []
         filter-file:
         filter-perdir:
- #   deploy_permissions:
- #       - 'sudo chown -R deploy:www-data ./'
- #       - 'sudo chmod 770 -R ./.git ./storage'
- #       - 'find .  -not -path "./.git" -not -path "./storage" -exec sudo chmod 750 {} \;'
+    deploy_permissions:
+        - 'sudo chown -R deploy:www-data ./'
+        - 'sudo chmod 770 -R ./.git ./storage'
+        - 'find .  -not -path "./.git" -not -path "./storage" -exec sudo chmod 750 {} \;'
 
 prod-backend-client:
     <<: *dev3-base
