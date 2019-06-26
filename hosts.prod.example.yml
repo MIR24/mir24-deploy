@@ -36,16 +36,6 @@ prod-services:
     deploy_path: "{{app_base_path}}/mir24tv-service-scripts"
     sphinx_conf_src: "{{release_path}}/sphinxsearch/sphinx.conf"
     sphinx_conf_dest: "{{release_path}}/build/sphinx.conf"
-    rsync:
-        options: []
-        flags: rzuEa
-        include: []
-        include-file:
-        exclude: []
-        exclude-file:
-        filter: []
-        filter-file:
-        filter-perdir:
 
 prod-frontend:
     <<: *dev3-base
@@ -66,16 +56,6 @@ prod-frontend:
         - README.md
         - server.php
         - travis.yml
-    rsync:
-        options: []
-        flags: rzuEa
-        include: []
-        include-file:
-        exclude: []
-        exclude-file:
-        filter: []
-        filter-file:
-        filter-perdir:
     db_source_host: 192.168.227.23
     db_source_name: mir24_n1
     db_source_user: admin_user
@@ -104,16 +84,6 @@ prod-backend:
     rsync_marker: /home/rsync-dev/mount-marker
     rsync_src: /home/rsync-dev
     rsync_dest: "{{app_base_path}}/editors.mir24.tv/shared/public/uploaded"
-    rsync:
-        options: []
-        flags: rzuEa
-        include: []
-        include-file:
-        exclude: []
-        exclude-file:
-        filter: []
-        filter-file:
-        filter-perdir:
     deploy_permissions:
         - 'sudo chown -R deploy:www-data ./'
         - 'sudo chmod 770 -R ./.git ./storage'
@@ -124,19 +94,6 @@ prod-backend-client:
     roles: [backend-client]
     repository: git@github.com:MIR24/backend-client.git
     deploy_path: "{{app_base_path}}/backend-client"
-    rsync_src: "{{release_path}}/build"
-    rsync_dest_base: "{{app_base_path}}/editors.mir24.tv"
-    rsync_dest_relative: public
-    rsync:
-        options: []
-        flags: rzuEa
-        include: []
-        include-file:
-        exclude: []
-        exclude-file:
-        filter: []
-        filter-file:
-        filter-perdir:
 
 prod-photobank-client:
     <<: *dev3-base
@@ -144,16 +101,3 @@ prod-photobank-client:
     repository: git@github.com:MIR24/photobank-searchkit.git
     branch: external-client-dev
     deploy_path: "{{app_base_path}}/photobank-client"
-    rsync_src: "{{release_path}}/dist"
-    rsync_dest_base: "{{app_base_path}}/editors.mir24.tv"
-    rsync_dest_relative: public/ftb
-    rsync:
-        options: []
-        flags: rzE
-        include: []
-        include-file:
-        exclude: []
-        exclude-file:
-        filter: []
-        filter-file:
-        filter-perdir:
