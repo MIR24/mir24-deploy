@@ -61,6 +61,7 @@ task('deploy', [
     'config:inject',
     'config:switch',
     'sphinx:inject',
+    'supervisor:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -99,6 +100,7 @@ task('release:build', [
     'config:services',
     'config:inject',
     'sphinx:inject',
+    'supervisor:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -261,7 +263,7 @@ task('sphinx:index', function () {
 })->onStage('prod')->onRoles(ROLE_SS);
 
 desc('Configure supervisor');
-task('supervisor:configure', function () {
+task('supervisor:inject', function () {
     $supervisorParams = get('supervisor_params', []);
     foreach ($supervisorParams as $param => $value) {
         $key = '{' . $param . '}';
