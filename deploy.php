@@ -56,6 +56,7 @@ task('deploy', [
     'db:pipe',
     'deploy:update_code',
     'deploy:shared',
+    'symlink:uploaded',
     'config:clone',
     'config:services',
     'config:inject',
@@ -75,7 +76,6 @@ task('deploy', [
     'artisan:config:cache',
     'artisan:optimize',
     'artisan:migrate',
-    'symlink:uploaded',
     'deploy:permissions',
     'deploy:clear_paths',
     'memcached:restart',
@@ -95,6 +95,7 @@ task('release:build', [
     'db:pipe',
     'deploy:update_code',
     'deploy:shared',
+    'symlink:uploaded',
     'config:clone',
     'config:services',
     'config:inject',
@@ -112,7 +113,6 @@ task('release:build', [
     'artisan:config:cache',
     'artisan:optimize',
     'artisan:migrate',
-    'symlink:uploaded',
     'deploy:permissions',
     'deploy:clear_paths',
     'deploy:unlock'
@@ -121,6 +121,7 @@ task('release:build', [
 desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
+    'db:repipe',
     'config:switch',
     'artisan:config:cache',
     'artisan:migrate',
