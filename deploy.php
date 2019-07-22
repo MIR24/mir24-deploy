@@ -167,7 +167,13 @@ task('hotfix', [
 before('deploy', 'artisan:down');
 before('db:repipe', 'artisan:down');
 after('deploy:failed', 'artisan:up');
-after('deploy', 'sphinx:index');
+after('deploy', 'services:restart');
+
+task('services:restart', [
+    'supervisor:reread',
+    'supervisor:reload',
+    'sphinx:index',
+])->onStage('prod');
 
 desc('Pull the code from repo');
 task('pull_code', function () {
@@ -260,6 +266,16 @@ task('config:services', function() {
 desc('Reindex sphinx');
 task('sphinx:index', function () {
     run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet --config {{sphinx_conf_dest}}');
+})->onStage('prod')->onRoles(ROLE_SS);
+
+desk('Reread supervisor config');
+task('supervisor:reread', function () {
+    run('sudo supervisorctl reread');
+})->onStage('prod')->onRoles(ROLE_SS);
+
+desk('Reload supervisor');
+task('supervisor:reload', function () {
+    run('sudo supervisorctl reload');
 })->onStage('prod')->onRoles(ROLE_SS);
 
 desc('Configure supervisor');
