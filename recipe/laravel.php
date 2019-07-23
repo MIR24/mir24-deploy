@@ -29,6 +29,9 @@ set('writable_dirs', [
 ]);
 
 set('laravel_version', function () {
+    if(test('[ ! -f {{release_path}}/artisan ]')) {
+        return '-';
+    }
     $result = run('cd {{release_path}} && {{bin/php}} artisan --version');
 
     preg_match_all('/(\d+\.?)+/', $result, $matches);
