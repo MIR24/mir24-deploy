@@ -4,4 +4,4 @@
 # composer vendor dir
 /vendor
 
-hosts.dev.yml
+/hosts.dev.yml
