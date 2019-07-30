@@ -54,19 +54,6 @@ dev-backend-client:
     roles: [backend-client]
     repository: git@github.com:MIR24/backend-client.git
     deploy_path: /var/www/backend-client
-    rsync_src: "{{release_path}}/build"
-    rsync_dest_base: /var/www/backend-server
-    rsync_dest_relative: public
-    rsync:
-        options: []
-        flags: rzuEa
-        include: []
-        include-file:
-        exclude: []
-        exclude-file:
-        filter: []
-        filter-file:
-        filter-perdir:
 
 dev-photobank-client:
     <<: *dev-base
@@ -74,16 +61,3 @@ dev-photobank-client:
     repository: git@github.com:MIR24/photobank-searchkit.git
     branch: external-client-dev
     deploy_path: /var/www/photobank-client
-    rsync_src: "{{release_path}}/dist"
-    rsync_dest_base: /var/www/backend-server
-    rsync_dest_relative: public/ftb
-    rsync:
-        options: []
-        flags: rzE
-        include: []
-        include-file:
-        exclude: []
-        exclude-file:
-        filter: []
-        filter-file:
-        filter-perdir:
