@@ -135,6 +135,7 @@ task('release:switch', [
     'artisan:migrate',
     'artisan:cache:clear_table',
     'deploy:symlink',
+    'deploy:permissions',
     'memcached:restart',
     'deploy:unlock',
     'cleanup',
