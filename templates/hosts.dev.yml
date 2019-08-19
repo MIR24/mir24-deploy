@@ -1,0 +1,63 @@
+.dev-base: &dev-base
+    local: true
+    app_name: dev
+    stage: dev
+    keep_releases: 2
+    branch: develop
+    http_user: www-data
+
+.dev-settings: &dev-settings
+    db_source_mode: none
+    db_app_host: localhost
+    db_app_name: mir24_7
+    db_app_user: root
+    db_app_pass: root
+    env_example_file: "{{release_path}}/.env.example"
+    inject_env:
+        DB_HOST: "{{db_app_host}}"
+        DB_DATABASE: "{{db_app_name}}"
+        DB_USERNAME: "{{db_app_user}}"
+        DB_PASSWORD: "{{db_app_pass}}"
+
+dev-frontend:
+    <<: *dev-base
+    <<: *dev-settings
+    roles: [frontend-server]
+    repository: git@github.com:MIR24/frontend-server.git
+    composer_action: update
+    deploy_path: /var/www/frontend-server
+    uploaded_path: /var/www/backend-server/shared/public/uploaded
+    writable_mode: chown
+    writable_dirs: [bootstrap/cache, storage]
+    shared_dirs: [storage/logs, public/uploaded]
+    shared_files: []
+    supervisor_conf_dest: "{{release_path}}/build/supervisor.conf"
+    supervisor_params:
+        prefix: "{{app_name}}_"
+        base_dir: /var/www/mir24-app/editors.mir24.tv/current/
+        log_dir: /var/www/mir24-app/editors.mir24.tv/current/storage/logs/supervisor.log
+
+dev-backend:
+    <<: *dev-base
+    <<: *dev-settings
+    roles: [backend-server]
+    repository: git@github.com:MIR24/backend-server.git
+    composer_action: update
+    writable_mode: chown
+    writable_dirs: [public/uploaded, storage]
+    shared_dirs: [storage/logs, public/uploaded]
+    shared_files: []
+    deploy_path: /var/www/backend-server
+
+dev-backend-client:
+    <<: *dev-base
+    roles: [backend-client]
+    repository: git@github.com:MIR24/backend-client.git
+    deploy_path: /var/www/backend-client
+
+dev-photobank-client:
+    <<: *dev-base
+    roles: [photobank-client]
+    repository: git@github.com:MIR24/photobank-searchkit.git
+    branch: external-client-dev
+    deploy_path: /var/www/photobank-client

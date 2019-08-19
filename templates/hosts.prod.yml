@@ -1,6 +1,5 @@
-.dev3-base: &dev3-base
+.dev3-base: &prod-base
     hostname: deploy@dev3.mir24.tv
-    app_name: dev7
     app_base_path: /var/www/mir24-app
     stage: prod
     keep_releases: 5
@@ -59,32 +58,22 @@
         VK_APP_TOKEN: 'token'
         VK_OWNER_ID: 'ownerid'
         FRONT_ROUTE: 'https://dev-release.mir24.tv'
-        GA_MEASUREMENT_ID: ''
-        GOOGLE_OAUTH_PATH: ''
-        GOOGLE_VIEW_ID: ''
     inject_env_switched:
         CACHE_ENABLED: 'true'
         CDN_IMAGES_URL: 'https://imgtest.mir24.tv'
         FRONT_ROUTE: 'https://mir24.tv'
 
-
 prod-services:
-    <<: *dev3-base
+    <<: *prod-base
     <<: *prod-settings
     roles: [service-scripts]
     repository: git@github.com:MIR24/mir24tv-service-scripts.git
     deploy_path: "{{app_base_path}}/mir24tv-service-scripts"
+    sphinx_conf_src: "{{release_path}}/sphinxsearch/sphinx.conf"
     sphinx_conf_dest: "{{release_path}}/build/sphinx.conf"
-    supervisor_params:
-        prefix: "{{app_name}}_"
-        base_dir: "{{app_base_path}}/editors.mir24.tv/current/"
-        log_dir: "{{app_base_path}}/editors.mir24.tv/current/storage/logs/supervisor.log"
-    mount_files:
-        - "{{release_path}}/sphinxsearch/sphinx.conf:{{release_path}}/build/sphinx.conf"
-        - "{{release_path}}/supervisord/supervisor.conf:{{release_path}}/build/supervisor.conf"
 
 prod-frontend:
-    <<: *dev3-base
+    <<: *prod-base
     <<: *prod-settings
     roles: [frontend-server]
     repository: git@github.com:MIR24/frontend-server.git
@@ -115,7 +104,7 @@ prod-frontend:
 #        - 'find .  -not -path "./.git" -not -path "./bootstrap/cache" -not -path "./public/uploaded" -not -path "./public/sitemaps" -not -path "./storage" -not -path "./node_modules" -exec sudo chmod 750 {} \;'
 
 prod-backend:
-    <<: *dev3-base
+    <<: *prod-base
     <<: *prod-settings
     roles: [backend-server]
     repository: git@github.com:MIR24/backend-server.git
@@ -129,20 +118,21 @@ prod-backend:
     rsync_marker: /home/rsync-dev/mount-marker
     rsync_src: /home/rsync-dev1
     rsync_dest: "{{app_base_path}}/editors.mir24.tv/shared/public/uploaded"
- #   deploy_permissions:
- #       - 'sudo chown -R deploy:www-data ./'
- #       - 'sudo chmod 770 -R ./.git ./storage'
- #       - 'find .  -not -path "./.git" -not -path "./storage" -exec sudo chmod 750 {} \;'
+    #   deploy_permissions:
+    #       - 'sudo chown -R deploy:www-data ./'
+    #       - 'sudo chmod 770 -R ./.git ./storage'
+    #       - 'find .  -not -path "./.git" -not -path "./storage" -exec sudo chmod 750 {} \;'
 
 prod-backend-client:
-    <<: *dev3-base
+    <<: *prod-base
     roles: [backend-client]
     repository: git@github.com:MIR24/backend-client.git
     deploy_path: "{{app_base_path}}/backend-client"
 
 prod-photobank-client:
-    <<: *dev3-base
+    <<: *prod-base
     roles: [photobank-client]
     repository: git@github.com:MIR24/photobank-searchkit.git
     branch: external-client-dev
     deploy_path: "{{app_base_path}}/photobank-client"
+

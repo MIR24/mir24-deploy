@@ -28,6 +28,18 @@ set('release_name', function () use ($releaseDate) {
     return $releaseDate;
 });
 
+set('rsync', [
+    'exclude' => [],
+    'exclude-file' => false,
+    'include' => [],
+    'include-file' => false,
+    'filter' => [],
+    'filter-file' => false,
+    'filter-perdir' => false,
+    'flags' => 'rzuEa',
+    'options' => [],
+]);
+
 set('ssh_multiplexing', true);
 
 set('default_timeout', 1800);
@@ -56,6 +68,7 @@ task('deploy', [
     'db:pipe',
     'deploy:update_code',
     'deploy:shared',
+    'symlink:uploaded',
     'config:clone',
     'config:services',
     'config:inject',
@@ -67,8 +80,6 @@ task('deploy', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'rsync:setup',
-    'rsync',
     'artisan:storage:link',
     'artisan:cache:clear',
     'artisan:cache:clear_table',
@@ -76,7 +87,6 @@ task('deploy', [
     'artisan:config:cache',
     'artisan:optimize',
     'artisan:migrate',
-    'symlink:uploaded',
     'deploy:permissions',
     'deploy:clear_paths',
     'memcached:restart',
@@ -96,6 +106,7 @@ task('release:build', [
     'db:pipe',
     'deploy:update_code',
     'deploy:shared',
+    'symlink:uploaded',
     'config:clone',
     'config:services',
     'config:inject',
@@ -106,15 +117,12 @@ task('release:build', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'rsync:setup',
-    'rsync',
     'artisan:storage:link',
     'artisan:cache:clear',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
     'artisan:migrate',
-    'symlink:uploaded',
     'deploy:permissions',
     'deploy:clear_paths',
     'deploy:unlock'
@@ -123,11 +131,13 @@ task('release:build', [
 desc('Switch to release built');
 task('release:switch', [
     'deploy:lock',
+    'db:repipe',
     'config:switch',
     'artisan:config:cache',
     'artisan:migrate',
     'artisan:cache:clear_table',
     'deploy:symlink',
+    'deploy:permissions',
     'memcached:restart',
     'deploy:unlock',
     'cleanup',
@@ -146,8 +156,6 @@ task('hotfix', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'rsync:setup',
-    'rsync',
     'artisan:storage:link',
     'deploy:permissions',
     'artisan:cache:clear',
@@ -364,57 +372,6 @@ task('memcached:flush', function () {
 // Application maintenance mode tasks
 task('artisan:down')->onStage('test', 'prod')->onRoles(ROLE_BS);
 task('artisan:up')->onStage('test', 'prod')->onRoles(ROLE_BS);
-
-//Rsync tasks
-
-desc('Setup rsync destination path');
-task('rsync:setup', function () {
-    $dest = 'release';
-    if(test('[ ! -r {{rsync_dest_base}}/release ]')) {
-        writeln('<comment>Looks like BC component is built lonely</comment>');
-        $dest = 'current';
-    }
-    $basePath = get('rsync_dest_base');
-    $relativePath = get('rsync_dest_relative');
-    set('rsync_dest', parse("$basePath/{$dest}/$relativePath"));
-})->onRoles(
-    ROLE_BC,
-    ROLE_PB
-);
-
-desc('Rsync override');
-task('rsync', function() {
-    $config = get('rsync');
-
-    $src = get('rsync_src');
-    while (is_callable($src)) {
-        $src = $src();
-    }
-
-    if (!trim($src)) {
-        throw new \RuntimeException('You need to specify a source path.');
-    }
-
-    $dst = get('rsync_dest');
-    while (is_callable($dst)) {
-        $dst = $dst();
-    }
-
-    if (!trim($dst)) {
-        throw new \RuntimeException('You need to specify a destination path.');
-    }
-
-    $server = \Deployer\Task\Context::get()->getHost();
-    if ($server instanceof \Deployer\Host\Localhost) {
-        runLocally("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
-        return;
-    }
-
-    run("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
-})->onRoles(
-    ROLE_BC,
-    ROLE_PB
-);
 
 task('rsync:static', function() {
     if(has('rsync_marker') && test('[ ! -f {{rsync_marker}} ]')) {
