@@ -176,11 +176,11 @@ before('deploy', 'artisan:down');
 before('db:repipe', 'artisan:down');
 after('deploy:failed', 'artisan:up');
 after('deploy', 'services:restart');
+after('release:switch', 'services:restart');
 
 task('services:restart', [
     'supervisor:reread',
     'supervisor:reload',
-    'sphinx:index',
 ])->onStage('prod');
 
 desc('Pull the code from repo');
