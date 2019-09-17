@@ -21,7 +21,7 @@ $hostsInventory = (file_exists($hostsDev) && is_readable($hostsDev)) ? $hostsDev
 inventory($hostsInventory);
 
 function escapeForSed($value) {
-    return addcslashes($value, '{}/|&?!"\'');
+    return addcslashes($value, '/|&?!"\'');
 }
 
 set('release_name', function () use ($releaseDate) {
@@ -290,7 +290,7 @@ desc('Configure supervisor');
 task('supervisor:inject', function () {
     $supervisorParams = get('supervisor_params', []);
     foreach ($supervisorParams as $param => $value) {
-        $key = escapeForSed('{' . $param . '}');
+        $key = '\{' . $param . '\}';
         $escapedValue = escapeForSed($value);
         run("sed -i -E 's/$key/$escapedValue/g' {{supervisor_conf_dest}}");
     }
