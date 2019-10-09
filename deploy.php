@@ -13,7 +13,7 @@ const ROLE_BS = 'backend-server';
 const ROLE_BC = 'backend-client';
 const ROLE_PB = 'photobank-client';
 
-$releaseDate = date('d_M_H_i');
+$releaseDate = date('Ymd_Hi');
 
 $hostsDev = 'hosts.dev.yml';
 $hostsProd = 'hosts.yml';
