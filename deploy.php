@@ -82,6 +82,7 @@ task('deploy', [
     'artisan:storage:link',
     'artisan:cache:clear',
     'artisan:cache:clear_table',
+    'artisan:snatch:clear',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
@@ -134,6 +135,7 @@ task('release:switch', [
     'artisan:config:cache',
     'artisan:migrate',
     'artisan:cache:clear_table',
+    'artisan:snatch:clear',
     'deploy:symlink',
     'deploy:permissions',
     'memcached:restart',
@@ -316,6 +318,11 @@ desc('Clear cache table');
 task('artisan:cache:clear_table', function () {
     run('cd {{release_path}} && {{bin/php}} artisan cachetable:clear --truncate');
 })->onRoles(ROLE_FS);
+
+desc('Clear snatches table');
+task('artisan:snatch:clear', function () {
+    run('cd {{release_path}} && {{bin/php}} artisan snatch:clear');
+})->onRoles(ROLE_BS);
 
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
