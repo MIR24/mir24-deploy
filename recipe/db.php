@@ -6,13 +6,15 @@ use Symfony\Component\Dotenv\Dotenv;
 
 set('db_source_mode', 'current');
 
-function inflateDb() {
+function inflateDb($type='') {
     $dbSourceMode = get('db_source_mode');
     switch ($dbSourceMode) {
         case 'current':
+            $excludeMigrationTable = $type==='repipe' ? ' --ignore-table={{db_name_previous}}.migrations ' : '';
             $condition = get('db_name_previous');
             $message = 'Trying to inflate database {{db_app_name}} with release data from {{db_name_previous}}, please wait..';
-            $cmd = 'mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
+            $cmd = 'mysqldump --single-transaction --insert-ignore' . $excludeMigrationTable .
+                '-h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
                 ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}}';
             break;
         case 'source':
@@ -79,7 +81,7 @@ task('db:repipe', function () {
     if($releaseExists){
         $releaseInProgressName = get('releases_list')[0];
         set('release_name', $releaseInProgressName);
-        inflateDb();
+        inflateDb('repipe');
     }
     else {
         writeln("<comment>Can't define target DB, no release built found.</comment>");
