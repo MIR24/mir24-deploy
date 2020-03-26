@@ -14,7 +14,7 @@ function inflateDb($type='') {
             $condition = get('db_name_previous');
             $message = 'Trying to inflate database {{db_app_name}} with release data from {{db_name_previous}}, please wait..';
             $cmd = 'mysqldump --single-transaction --insert-ignore ' . $excludeMigrationTable .
-                '-h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
+                ' -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
                 ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}}';
             break;
         case 'source':
