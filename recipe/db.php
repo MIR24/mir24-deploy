@@ -13,14 +13,14 @@ function inflateDb($type='') {
         case 'current':
             $condition = get('db_name_previous');
             $message = 'Trying to inflate database {{db_app_name}} with release data from {{db_name_previous}}, please wait..';
-            $cmd = 'mysqldump --single-transaction --insert-ignore' . $excludeMigrationTable .
+            $cmd = 'mysqldump --single-transaction --insert-ignore ' . $excludeMigrationTable .
                 '-h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
                 ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}}';
             break;
         case 'source':
             $condition = get('db_source_name');
             $message = 'Trying to inflate database {{db_app_name}} with initial data from {{db_source_name}}, please wait..';
-            $cmd = 'mysqldump --single-transaction --insert-ignore' . $excludeMigrationTable .
+            $cmd = 'mysqldump --single-transaction --insert-ignore ' . $excludeMigrationTable .
                 ' -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
                 ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}}';
             break;
