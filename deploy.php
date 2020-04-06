@@ -74,6 +74,7 @@ task('deploy', [
     'config:inject',
     'config:switch',
     'sphinx:inject',
+    'cron:clone',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -110,6 +111,7 @@ task('release:build', [
     'config:services',
     'config:inject',
     'sphinx:inject',
+    'cron:clone',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -260,6 +262,11 @@ set('bin/indexer', function () {
 desc('Copy services config examples');
 task('config:services', function() {
     run('cp {{sphinx_conf_src}} {{sphinx_conf_dest}}');
+})->onRoles(ROLE_SS);
+
+desc('Copy cron');
+task('cron:clone', function() {
+    run('cp {{cron_conf_src}} {{cron_conf_dest}}');
 })->onRoles(ROLE_SS);
 
 desc('Reindex sphinx');
