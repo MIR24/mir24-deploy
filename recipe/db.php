@@ -8,7 +8,8 @@ set('db_source_mode', 'current');
 
 function inflateDb($type='') {
     $dbSourceMode = get('db_source_mode');
-    $excludeMigrationTable = $type==='repipe' ? ' --ignore-table=migrations ' : '';
+    $excludeMigrationTable = '';
+    // $excludeMigrationTable = $type==='repipe' ? ' --ignore-table=migrations ' : '';
     switch ($dbSourceMode) {
         case 'current':
             $condition = get('db_name_previous');
