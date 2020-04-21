@@ -6,19 +6,22 @@ use Symfony\Component\Dotenv\Dotenv;
 
 set('db_source_mode', 'current');
 
-function inflateDb() {
+function inflateDb($type='') {
     $dbSourceMode = get('db_source_mode');
+    $excludeMigrationTable = $type==='repipe' ? ' --ignore-table=migrations ' : '';
     switch ($dbSourceMode) {
         case 'current':
             $condition = get('db_name_previous');
             $message = 'Trying to inflate database {{db_app_name}} with release data from {{db_name_previous}}, please wait..';
-            $cmd = 'mysqldump --single-transaction --insert-ignore -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
+            $cmd = 'mysqldump --single-transaction --insert-ignore ' . $excludeMigrationTable .
+                ' -h{{db_app_host}} -u{{db_dep_user}} -p{{db_dep_pass}} {{db_name_previous}}' .
                 ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}}';
             break;
         case 'source':
             $condition = get('db_source_name');
             $message = 'Trying to inflate database {{db_app_name}} with initial data from {{db_source_name}}, please wait..';
-            $cmd = 'mysqldump --single-transaction --insert-ignore -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
+            $cmd = 'mysqldump --single-transaction --insert-ignore ' . $excludeMigrationTable .
+                ' -h{{db_source_host}} -u{{db_source_user}} -p{{db_source_pass}} {{db_source_name}}' .
                 ' | mysql  -u{{db_dep_user}} -p{{db_dep_pass}} -h{{db_app_host}} {{db_app_name}}';
             break;
         case 'file':
@@ -79,7 +82,7 @@ task('db:repipe', function () {
     if($releaseExists){
         $releaseInProgressName = get('releases_list')[0];
         set('release_name', $releaseInProgressName);
-        inflateDb();
+        inflateDb('repipe');
     }
     else {
         writeln("<comment>Can't define target DB, no release built found.</comment>");

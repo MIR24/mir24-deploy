@@ -230,7 +230,8 @@ task('config:clone', function () {
     run('cp {{env_example_file}} {{release_path}}/.env');
 })->onRoles(
     ROLE_FS,
-    ROLE_BS
+    ROLE_BS,
+    ROLE_PB
 );
 
 desc('Propagate configuration file');
@@ -242,7 +243,8 @@ task('config:inject', function () {
     }
 })->onRoles(
     ROLE_FS,
-    ROLE_BS
+    ROLE_BS,
+    ROLE_PB
 );
 
 desc('Propagate configuration file');
@@ -254,7 +256,8 @@ task('config:switch', function () {
     }
 })->onRoles(
     ROLE_FS,
-    ROLE_BS
+    ROLE_BS,
+    ROLE_PB
 );
 
 //Sphinx related tasks
