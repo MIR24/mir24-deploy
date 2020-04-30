@@ -74,6 +74,7 @@ task('deploy', [
     'config:inject',
     'config:switch',
     'sphinx:inject',
+    'supervisor:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -110,6 +111,7 @@ task('release:build', [
     'config:services',
     'config:inject',
     'sphinx:inject',
+    'supervisor:inject',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -173,7 +175,13 @@ task('hotfix', [
 before('deploy', 'artisan:down');
 before('db:repipe', 'artisan:down');
 after('deploy:failed', 'artisan:up');
-after('deploy', 'sphinx:index');
+after('deploy', 'services:restart');
+after('release:switch', 'services:restart');
+
+task('services:restart', [
+    'supervisor:reread',
+    'supervisor:reload',
+])->onStage('prod');
 
 desc('Pull the code from repo');
 task('pull_code', function () {
@@ -231,7 +239,7 @@ task('config:inject', function () {
     $customEnv = get('inject_env', []);
     foreach ($customEnv as $key => $value) {
         $escapedValue = escapeForSed($value);
-        run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
+        run("sed -i -E 's|^$key=.*|$key=$escapedValue|g' {{release_path}}/.env");
     }
 })->onRoles(
     ROLE_FS,
@@ -244,7 +252,7 @@ task('config:switch', function () {
     $customEnv = get('inject_env_switched', []);
     foreach ($customEnv as $key => $value) {
         $escapedValue = escapeForSed($value);
-        run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
+        run("sed -i -E 's|^$key=.*|$key=$escapedValue|g' {{release_path}}/.env");
     }
 })->onRoles(
     ROLE_FS,
@@ -259,7 +267,11 @@ set('bin/indexer', function () {
 
 desc('Copy services config examples');
 task('config:services', function() {
-    run('cp {{sphinx_conf_src}} {{sphinx_conf_dest}}');
+    $mountFiles = get('mount_files', []);
+    foreach ($mountFiles as $mountFile) {
+        [$src, $dest] = explode(':', $mountFile);
+        run("cp $src $dest");
+    }
 })->onRoles(ROLE_SS);
 
 desc('Reindex sphinx');
@@ -267,13 +279,33 @@ task('sphinx:index', function () {
     run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet --config {{sphinx_conf_dest}}');
 })->onStage('prod')->onRoles(ROLE_SS);
 
+desc('Reread supervisor config');
+task('supervisor:reread', function () {
+    run('sudo supervisorctl reread');
+})->onStage('prod')->onRoles(ROLE_SS);
+
+desc('Reload supervisor');
+task('supervisor:reload', function () {
+    run('sudo supervisorctl reload');
+})->onStage('prod')->onRoles(ROLE_SS);
+
+desc('Configure supervisor');
+task('supervisor:inject', function () {
+    $supervisorParams = get('supervisor_params', []);
+    foreach ($supervisorParams as $param => $value) {
+        $key = '{' . $param . '}';
+        $escapedValue = escapeForSed($value);
+        run("sed -i 's|$key|$escapedValue|g' {{supervisor_conf_dest}}");
+    }
+})->onRoles(ROLE_SS);
+
 desc('Infect app configuration with sphinx credentials');
 task('sphinx:inject', function () {
     on(roles(ROLE_SS), function() {
-        run("sed -i -E 's/sql_host[[:blank:]]*=.*/sql_host={{db_app_host}}/g' {{sphinx_conf_dest}}");
-        run("sed -i -E 's/sql_db[[:blank:]]*=.*/sql_db={{db_app_name}}/g' {{sphinx_conf_dest}}");
-        run("sed -i -E 's/sql_user[[:blank:]]*=.*/sql_user={{db_app_user}}/g' {{sphinx_conf_dest}}");
-        run("sed -i -E 's/sql_pass[[:blank:]]*=.*/sql_pass={{db_app_pass}}/g' {{sphinx_conf_dest}}");
+        run("sed -i -E 's|sql_host[[:blank:]]*=.*|sql_host={{db_app_host}}|g' {{sphinx_conf_dest}}");
+        run("sed -i -E 's|sql_db[[:blank:]]*=.*|sql_db={{db_app_name}}|g' {{sphinx_conf_dest}}");
+        run("sed -i -E 's|sql_user[[:blank:]]*=.*|sql_user={{db_app_user}}|g' {{sphinx_conf_dest}}");
+        run("sed -i -E 's|sql_pass[[:blank:]]*=.*|sql_pass={{db_app_pass}}|g' {{sphinx_conf_dest}}");
     });
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
 
