@@ -90,6 +90,7 @@ task('deploy', [
     'deploy:permissions',
     'deploy:clear_paths',
     'memcached:restart',
+    'memcached:flush',
     'deploy:symlink',
     'deploy:unlock',
     'cleanup',
@@ -139,6 +140,7 @@ task('release:switch', [
     'deploy:symlink',
     'deploy:permissions',
     'memcached:restart',
+    'memcached:flush',
     'deploy:unlock',
     'cleanup',
     'success'
@@ -367,9 +369,7 @@ task('memcached:restart', function () {
 
 desc('Flush memcached');
 task('memcached:flush', function () {
-    if (has('previous_release')) {
-        run('cd {{previous_release}} && {{bin/php}} artisan cache:flush');
-    }
+    run('cd {{release_path}} && {{bin/php}} artisan cache:flush');
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Application maintenance mode tasks
