@@ -89,7 +89,6 @@ task('deploy', [
     'deploy:permissions',
     'deploy:clear_paths',
     'memcached:restart',
-    'memcached:flush',
     'deploy:symlink',
     'deploy:unlock',
     'cleanup',
@@ -138,7 +137,6 @@ task('release:switch', [
     'deploy:symlink',
     'deploy:permissions',
     'memcached:restart',
-    'memcached:flush',
     'deploy:unlock',
     'cleanup',
     'success'
@@ -332,6 +330,9 @@ desc('Restart memcached');
 task('memcached:restart', function () {
     if (has('previous_release')) {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:restart');
+    }
+    else {
+        run('cd {{release_path}} && {{bin/php}} artisan cache:flush');
     }
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
 
