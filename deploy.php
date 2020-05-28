@@ -266,7 +266,7 @@ task('config:services', function() {
 
 desc('Copy cron');
 task('cron:clone', function() {
-    run('cp {{cron_conf_src}} {{cron_conf_dest}}');
+    run('mkdir -p {{cron_conf_dest}} && cp {{cron_conf_src}} {{cron_conf_dest}}');
 })->onRoles(ROLE_SS);
 
 desc('Reindex sphinx');
