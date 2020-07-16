@@ -74,6 +74,7 @@ task('deploy', [
     'config:inject',
     'config:switch',
     'sphinx:inject',
+    'cron:clone',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -82,7 +83,6 @@ task('deploy', [
     'artisan:storage:link',
     'artisan:cache:clear',
     'artisan:cache:clear_table',
-    'artisan:snatch:clear',
     'artisan:key:generate',
     'artisan:config:cache',
     'artisan:optimize',
@@ -111,6 +111,7 @@ task('release:build', [
     'config:services',
     'config:inject',
     'sphinx:inject',
+    'cron:clone',
     'deploy:copy_dirs',
     'deploy:vendors',
     'npm:install',
@@ -135,7 +136,6 @@ task('release:switch', [
     'artisan:config:cache',
     'artisan:migrate',
     'artisan:cache:clear_table',
-    'artisan:snatch:clear',
     'deploy:symlink',
     'deploy:permissions',
     'memcached:restart',
@@ -264,6 +264,11 @@ task('config:services', function() {
     run('cp {{sphinx_conf_src}} {{sphinx_conf_dest}}');
 })->onRoles(ROLE_SS);
 
+desc('Copy cron');
+task('cron:clone', function() {
+    run('mkdir -p {{cron_conf_dest}} && cp {{cron_conf_src}} {{cron_conf_dest}}');
+})->onRoles(ROLE_SS);
+
 desc('Reindex sphinx');
 task('sphinx:index', function () {
     run('sudo -H -u sphinxsearch {{bin/indexer}} --rotate --all --quiet --config {{sphinx_conf_dest}}');
@@ -322,11 +327,6 @@ task('artisan:cache:clear_table', function () {
     run('cd {{release_path}} && {{bin/php}} artisan cachetable:clear --truncate');
 })->onRoles(ROLE_FS);
 
-desc('Clear snatches table');
-task('artisan:snatch:clear', function () {
-    run('cd {{release_path}} && {{bin/php}} artisan snatch:clear');
-})->onRoles(ROLE_BS);
-
 desc('Creating symlink to uploaded folder at backend server');
 task('symlink:uploaded', function () {
     // Will use simple≤ two steps switch.
@@ -338,13 +338,14 @@ task('memcached:restart', function () {
     if (has('previous_release')) {
         run('cd {{previous_release}} && {{bin/php}} artisan cache:restart');
     }
+    else {
+        run('cd {{release_path}} && {{bin/php}} artisan cache:flush');
+    }
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 desc('Flush memcached');
 task('memcached:flush', function () {
-    if (has('previous_release')) {
-        run('cd {{previous_release}} && {{bin/php}} artisan cache:flush');
-    }
+    run('cd {{release_path}} && {{bin/php}} artisan cache:flush');
 })->onStage('test', 'prod')->onRoles(ROLE_FS);
 
 // Application maintenance mode tasks
