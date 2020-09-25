@@ -167,7 +167,7 @@ task('deploy', [
     'deploy:shared',
     'deploy:vendors',
     'deploy:writable',
-    'artisan:storage:link',
+//    'artisan:storage:link',
     'artisan:view:clear',
     'artisan:config:cache',
     'artisan:optimize',
