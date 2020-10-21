@@ -42,7 +42,7 @@ set('rsync', [
 
 set('ssh_multiplexing', true);
 
-set('default_timeout', 1800);
+set('default_timeout', 3600);
 set('copy_dirs', ['vendor']);
 
 // Project name
@@ -80,7 +80,6 @@ task('deploy', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'artisan:storage:link',
     'artisan:cache:clear',
     'artisan:cache:clear_table',
     'artisan:key:generate',
@@ -117,7 +116,6 @@ task('release:build', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'artisan:storage:link',
     'artisan:cache:clear',
     'artisan:key:generate',
     'artisan:config:cache',
@@ -156,7 +154,6 @@ task('hotfix', [
     'npm:install',
     'tsd:install',
     'npm:build',
-    'artisan:storage:link',
     'deploy:permissions',
     'artisan:cache:clear',
     'artisan:key:generate',
@@ -233,7 +230,7 @@ task('config:inject', function () {
     $customEnv = get('inject_env', []);
     foreach ($customEnv as $key => $value) {
         $escapedValue = escapeForSed($value);
-        run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
+        run("sed -i -E 's/^$key=.*/$key=\"$escapedValue\"/g' {{release_path}}/.env");
     }
 })->onRoles(
     ROLE_FS,
@@ -246,7 +243,7 @@ task('config:switch', function () {
     $customEnv = get('inject_env_switched', []);
     foreach ($customEnv as $key => $value) {
         $escapedValue = escapeForSed($value);
-        run("sed -i -E 's/^$key=.*/$key=$escapedValue/g' {{release_path}}/.env");
+        run("sed -i -E 's/^$key=.*/$key=\"$escapedValue\"/g' {{release_path}}/.env");
     }
 })->onRoles(
     ROLE_FS,
@@ -294,7 +291,7 @@ task('npm:install', function () {
             writeln('<info>Packages installation may take a while for the first time..</info>');
         }
     }
-    run('cd {{release_path}} && {{bin/npm}} install', ['timeout' => 1800]);
+    run('cd {{release_path}} && {{bin/npm}} install');
 })->onRoles(
     ROLE_FS,
     ROLE_BC,
@@ -304,12 +301,12 @@ task('npm:install', function () {
 //TODO Try to copy tsd indtallation from previous release
 desc('Install tsd packages');
 task('tsd:install', function () {
-    run('cd {{release_path}} && {{bin/npm}} run tsd -- install', ['timeout' => 1800]);
+    run('cd {{release_path}} && {{bin/npm}} run tsd -- install');
 })->onRoles(ROLE_PB);
 
 desc('Build npm packages');
 task('npm:build', function () {
-    run('cd {{release_path}} && {{bin/npm}} run build', ['timeout' => 1800]);
+    run('cd {{release_path}} && {{bin/npm}} run build');
 })->onRoles(
     ROLE_FS,
     ROLE_BC,
