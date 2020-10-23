@@ -24,7 +24,7 @@ dev-frontend:
     <<: *dev-settings
     roles: [frontend-server]
     repository: git@github.com:MIR24/frontend-server.git
-    composer_action: update
+    composer_action: install
     deploy_path: /var/www/frontend-server
     uploaded_path: /var/www/backend-server/shared/public/uploaded
     writable_mode: chown
@@ -42,7 +42,7 @@ dev-backend:
     <<: *dev-settings
     roles: [backend-server]
     repository: git@github.com:MIR24/backend-server.git
-    composer_action: update
+    composer_action: install
     writable_mode: chown
     writable_dirs: [public/uploaded, storage]
     shared_dirs: [storage/logs, public/uploaded]
