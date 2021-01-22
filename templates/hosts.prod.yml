@@ -38,7 +38,6 @@
         CACHE_WARMMARKER: 'hot'
         NOCAPTCHA_SECRET: 'secret'
         NOCAPTCHA_SITEKEY: 'key'
-        VIDEO_VAST_TAG: 'https://moevideo.biz/vast?ref=mir24.tv&mvis=1&es=1&referrer='
         CACHE_DRIVER: 'memcached'
         QUEUE_DRIVER: 'database'
         PRIVATE_KEY: 'key'
@@ -112,7 +111,7 @@ prod-backend:
     <<: *prod-settings
     roles: [backend-server]
     repository: git@github.com:MIR24/backend-server.git
-    composer_action: update
+    composer_action: install
     writable_mode: chown
     writable_use_sudo: true
     writable_dirs: [public/uploaded, storage]
